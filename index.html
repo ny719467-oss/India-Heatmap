@@ -451,17 +451,7 @@ function renderMap(){
 
   // ── Labels ──
   const labelG=svg.append('g');
-  const mapCx=(mapLeft+mapRight)/2, mapCy=(mapTop+mapBottom)/2;
-  const fs0=Math.max(10.5,Math.min(16.5,W0/63));
-
-  // Clamp outside-label coords within SVG (leave 5px margin; avoid right-legend area)
-  const clampX=(x,anchor)=>{
-    const pad=5, rEdge=mapRight-4;
-    if(anchor==='end')   return Math.min(rEdge, Math.max(pad+60, x));
-    if(anchor==='start') return Math.min(rEdge-60, Math.max(pad, x));
-    return Math.min(rEdge-30, Math.max(pad+30, x));
-  };
-  const clampY=y=>Math.max(8, Math.min(H-8, y));
+  const fs0=Math.max(7,Math.min(13,W0/85));
 
   // Returns true if a CSS colour string is dark (luminance < 0.35)
   function isDark(cssColor){
@@ -473,7 +463,7 @@ function renderMap(){
 
   geoData.features.forEach(f=>{
     const name=stateProp(f);
-    if(NO_LABEL.has(name)) return;   // skip label entirely for tiny UTs
+    if(NO_LABEL.has(name)) return;
     const key=canonical(name);
     const cnt=displayData[key]||0;
     const label=dispName(name);
@@ -485,94 +475,45 @@ function renderMap(){
     const [cx,cy]=pathGen.centroid(f);
     if(isNaN(cx)||isNaN(cy)) return;
 
-    const isSmall=bw<40||bh<28||FORCE_OUTSIDE.has(name);
-    const fs=Math.max(6,Math.min(fs0,bw/6));
-
-    // Split label into two lines at first space
+    // Split at first space: "Madhya Pradesh" → ["Madhya","Pradesh"]
     const words=label.split(' ');
     const line1=words[0];
     const line2=words.length>1?words.slice(1).join(' '):null;
-
-    // Cap name font so longest line fits within state width
-    const longestChars=Math.max(line1.length, line2?line2.length:0);
-    const fsName=Math.min(fs*2, bw/(longestChars*0.55));
     const nameLines=line2?2:1;
+    const longestChars=Math.max(line1.length, line2?line2.length:0);
 
-    function drawName(g, x, baseY, anchor){
-      const totalH=nameLines*fsName*1.1;
-      const startY=baseY-totalH/2+fsName*0.55;
+    // Font sized to fit strictly within state bounding box
+    const fsByW = bw / (longestChars * 0.58);
+    const fsByH = bh / (nameLines * 1.3 + (cnt>0 ? 1.3 : 0));
+    const fs = Math.max(5, Math.min(fs0, fsByW, fsByH));
+
+    // Total block height: name lines + optional count
+    const nameH = nameLines * fs * 1.2;
+    const totalH = nameH + (cnt>0 ? fs*1.1 : 0);
+    const startY = cy - totalH/2 + fs*0.5;
+
+    const g = labelG.append('g');
+    g.append('text')
+      .attr('x',cx).attr('y',startY)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .style('font-size',`${fs}px`).style('font-weight','700')
+      .style('fill',txtColor).style('pointer-events','none')
+      .text(line1);
+    if(line2){
       g.append('text')
-        .attr('x',x).attr('y',startY)
-        .attr('text-anchor',anchor).attr('dominant-baseline','middle')
-        .style('font-size',`${fsName}px`).style('font-weight','700')
-        .style('fill',txtColor).style('pointer-events','none')
-        .text(line1);
-      if(line2){
-        g.append('text')
-          .attr('x',x).attr('y',startY+fsName*1.1)
-          .attr('text-anchor',anchor).attr('dominant-baseline','middle')
-          .style('font-size',`${fsName}px`).style('font-weight','700')
-          .style('fill',txtColor).style('pointer-events','none')
-          .text(line2);
-      }
-    }
-
-    if(!isSmall){
-      // Inside label: name + count stacked
-      const nameTotalH=nameLines*fsName*1.1;
-      const cntOffY=nameTotalH/2+fs*0.9;
-      const nameBaseY=cnt>0?cy-cntOffY/2:cy;
-      const g=labelG.append('g');
-      drawName(g, cx, nameBaseY, 'middle');
-      if(cnt>0){
-        g.append('text')
-          .attr('x',cx).attr('y',nameBaseY+cntOffY)
-          .attr('text-anchor','middle').attr('dominant-baseline','middle')
-          .style('font-size',`${Math.max(5.5,fs-1)}px`).style('font-weight','400')
-          .style('fill',txtColor).style('pointer-events','none')
-          .text(cnt.toLocaleString());
-      }
-    } else {
-      // Outside label: place directly on state centroid
-      const dx=cx-mapCx, dy=cy-mapCy;
-      const len=Math.sqrt(dx*dx+dy*dy)||1;
-      const push=Math.max(55,Math.min(85,180/Math.max(bw,bh,1)));
-      const rawNx=cx+(dx/len)*push;
-      const rawNy=cy+(dy/len)*push;
-      const anchor=rawNx<cx-4?'end':rawNx>cx+4?'start':'middle';
-      const nx=clampX(rawNx,anchor);
-      const ny=clampY(rawNy);
-
-      const fs2=Math.max(6.5,fs0-1);
-      const fs2Name=Math.min(fs2*2, bw/(longestChars*0.55));
-      const nameTotalH2=(line2?2:1)*fs2Name*1.1;
-      const cntOffY2=nameTotalH2/2+fs2*0.9;
-      const nameBaseY2=cnt>0?cy-cntOffY2/2:cy;
-      const g=labelG.append('g');
-      // reuse drawName but with fs2Name
-      const startY2=nameBaseY2-((line2?2:1)*fs2Name*1.1)/2+fs2Name*0.55;
-      g.append('text')
-        .attr('x',cx).attr('y',startY2)
+        .attr('x',cx).attr('y',startY + fs*1.2)
         .attr('text-anchor','middle').attr('dominant-baseline','middle')
-        .style('font-size',`${fs2Name}px`).style('font-weight','700')
+        .style('font-size',`${fs}px`).style('font-weight','700')
         .style('fill',txtColor).style('pointer-events','none')
-        .text(line1);
-      if(line2){
-        g.append('text')
-          .attr('x',cx).attr('y',startY2+fs2Name*1.1)
-          .attr('text-anchor','middle').attr('dominant-baseline','middle')
-          .style('font-size',`${fs2Name}px`).style('font-weight','700')
-          .style('fill',txtColor).style('pointer-events','none')
-          .text(line2);
-      }
-      if(cnt>0){
-        g.append('text')
-          .attr('x',cx).attr('y',cy+fs2*0.8)
-          .attr('text-anchor','middle').attr('dominant-baseline','middle')
-          .style('font-size',`${Math.max(5.5,fs2-1)}px`).style('font-weight','400')
-          .style('fill',txtColor).style('pointer-events','none')
-          .text(cnt.toLocaleString());
-      }
+        .text(line2);
+    }
+    if(cnt>0){
+      g.append('text')
+        .attr('x',cx).attr('y',startY + nameH + fs*0.5)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .style('font-size',`${Math.max(5,fs*0.8)}px`).style('font-weight','400')
+        .style('fill',txtColor).style('pointer-events','none')
+        .text(cnt.toLocaleString());
     }
   });
 
