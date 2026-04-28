@@ -487,12 +487,15 @@ function renderMap(){
 
     const isSmall=bw<40||bh<28||FORCE_OUTSIDE.has(name);
     const fs=Math.max(6,Math.min(fs0,bw/6));
-    const fsName=fs*2;  // state name 2x size
 
     // Split label into two lines at first space
     const words=label.split(' ');
     const line1=words[0];
     const line2=words.length>1?words.slice(1).join(' '):null;
+
+    // Cap name font so longest line fits within state width
+    const longestChars=Math.max(line1.length, line2?line2.length:0);
+    const fsName=Math.min(fs*2, bw/(longestChars*0.55));
     const nameLines=line2?2:1;
 
     function drawName(g, x, baseY, anchor){
@@ -541,7 +544,7 @@ function renderMap(){
       const ny=clampY(rawNy);
 
       const fs2=Math.max(6.5,fs0-1);
-      const fs2Name=fs2*2;
+      const fs2Name=Math.min(fs2*2, bw/(longestChars*0.55));
       const nameTotalH2=(line2?2:1)*fs2Name*1.1;
       const cntOffY2=nameTotalH2/2+fs2*0.9;
       const nameBaseY2=cnt>0?cy-cntOffY2/2:cy;
