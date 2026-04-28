@@ -452,7 +452,7 @@ function renderMap(){
   // ── Labels ──
   const labelG=svg.append('g');
   const mapCx=(mapLeft+mapRight)/2, mapCy=(mapTop+mapBottom)/2;
-  const fs0=Math.max(7,Math.min(11,W0/95));
+  const fs0=Math.max(10.5,Math.min(16.5,W0/63));
 
   // Clamp outside-label coords within SVG (leave 5px margin; avoid right-legend area)
   const clampX=(x,anchor)=>{
