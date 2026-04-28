@@ -473,7 +473,7 @@ function renderMap(){
     const key=canonical(name);
     const cnt=displayData[key]||0;
     const label=dispName(name);
-    const txtColor=isDark(getColor(cnt))?'#fff':'#000';
+    const txtColor='#000';
     const bounds=pathGen.bounds(f);
     if(!bounds||isNaN(bounds[0][0])) return;
     const bw=bounds[1][0]-bounds[0][0];
