@@ -494,24 +494,25 @@ function renderMap(){
     const fsByW = bw / (longestChars * 0.68);
     const fsByH = bh / (nameLines * 1.5 + (cnt>0 ? 1.5 : 0));
     const fs = Math.max(4, Math.min(fs0, fsByW, fsByH));
+    const fsName = fs * 1.25;
 
     // Total block height: name lines + optional count
-    const nameH = nameLines * fs * 1.2;
+    const nameH = nameLines * fsName * 1.2;
     const totalH = nameH + (cnt>0 ? fs*1.1 : 0);
-    const startY = cy - totalH/2 + fs*0.5;
+    const startY = cy - totalH/2 + fsName*0.5;
 
     const g = labelG.append('g');
     g.append('text')
       .attr('x',cx).attr('y',startY)
       .attr('text-anchor','middle').attr('dominant-baseline','middle')
-      .style('font-size',`${fs}px`).style('font-weight','700')
+      .style('font-size',`${fsName}px`).style('font-weight','700')
       .style('fill',txtColor).style('pointer-events','none')
       .text(line1);
     if(line2){
       g.append('text')
-        .attr('x',cx).attr('y',startY + fs*1.2)
+        .attr('x',cx).attr('y',startY + fsName*1.2)
         .attr('text-anchor','middle').attr('dominant-baseline','middle')
-        .style('font-size',`${fs}px`).style('font-weight','700')
+        .style('font-size',`${fsName}px`).style('font-weight','700')
         .style('fill',txtColor).style('pointer-events','none')
         .text(line2);
     }
