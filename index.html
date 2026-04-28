@@ -88,9 +88,24 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
     <div class="card">
       <div class="map-header">
         <div class="map-title">User Distribution — Indian States</div>
-        <div class="dl-btns">
-          <button class="btn btn-primary btn-sm" onclick="dlSVG()">⬇ SVG</button>
-          <button class="btn btn-green btn-sm" onclick="dlPNG()">⬇ PNG</button>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:.83rem;font-weight:600;color:#4a5568">Color:</label>
+          <select id="color-scheme" onchange="renderMap()" style="font-size:.83rem;padding:5px 10px;border-radius:6px;border:1px solid #cbd5e0;background:#fff;cursor:pointer">
+            <option value="Blues">Blues</option>
+            <option value="Greens">Greens</option>
+            <option value="Oranges">Oranges</option>
+            <option value="Purples">Purples</option>
+            <option value="Reds">Reds</option>
+            <option value="YlOrRd">Yellow → Red</option>
+            <option value="YlGnBu">Yellow → Blue</option>
+            <option value="RdPu">Red → Purple</option>
+            <option value="BuPu">Blue → Purple</option>
+            <option value="GnBu">Green → Blue</option>
+          </select>
+          <div class="dl-btns">
+            <button class="btn btn-primary btn-sm" onclick="dlSVG()">⬇ SVG</button>
+            <button class="btn btn-green btn-sm" onclick="dlPNG()">⬇ PNG</button>
+          </div>
         </div>
       </div>
       <div class="stats" id="stats"></div>
@@ -310,13 +325,28 @@ async function loadAndRender(){
 }
 
 // ── Color scale (power 0.4 for perceptual distribution) ──────────────────────
+const SCHEMES = {
+  Blues:   d3.interpolateBlues,
+  Greens:  d3.interpolateGreens,
+  Oranges: d3.interpolateOranges,
+  Purples: d3.interpolatePurples,
+  Reds:    d3.interpolateReds,
+  YlOrRd:  d3.interpolateYlOrRd,
+  YlGnBu:  d3.interpolateYlGnBu,
+  RdPu:    d3.interpolateRdPu,
+  BuPu:    d3.interpolateBuPu,
+  GnBu:    d3.interpolateGnBu,
+};
+
 function makeColorFn(maxVal){
+  const sel=document.getElementById('color-scheme');
+  const interp=SCHEMES[(sel&&sel.value)||'Blues']||d3.interpolateBlues;
   const POW=0.4;
   const maxP=Math.pow(maxVal||1,POW);
   return v=>{
     if(!v||v<=0) return '#edf1f6';
     const t=Math.pow(Math.min(v,maxVal),POW)/maxP;
-    return d3.interpolateBlues(0.12+t*0.88);
+    return interp(0.12+t*0.88);
   };
 }
 
