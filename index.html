@@ -451,7 +451,13 @@ function renderMap(){
 
   // ── Labels ──
   const labelG=svg.append('g');
-  const fs0=Math.max(4,Math.min(8,W0/130));
+  const fs0=Math.max(4,Math.min(10,W0/110));
+
+  // Per-state label nudge: [dx, dy] as fraction of bounding box
+  const NUDGE = {
+    'AP':[-0.22, 0],
+    'AN':[-0.1,  0],
+  };
 
   // Returns true if a CSS colour string is dark (luminance < 0.35)
   function isDark(cssColor){
@@ -472,8 +478,10 @@ function renderMap(){
     if(!bounds||isNaN(bounds[0][0])) return;
     const bw=bounds[1][0]-bounds[0][0];
     const bh=bounds[1][1]-bounds[0][1];
-    const [cx,cy]=pathGen.centroid(f);
+    let [cx,cy]=pathGen.centroid(f);
     if(isNaN(cx)||isNaN(cy)) return;
+    const nudge=NUDGE[key];
+    if(nudge){ cx+=bw*nudge[0]; cy+=bh*nudge[1]; }
 
     // Split at first space: "Madhya Pradesh" → ["Madhya","Pradesh"]
     const words=label.split(' ');
