@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>India State User Distribution Map</title>
+<title>India State Coverage Map</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -50,23 +50,25 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
 .tooltip{position:absolute;pointer-events:none;display:none;z-index:50;background:rgba(15,30,60,.93);color:#fff;padding:10px 14px;border-radius:8px;min-width:160px;box-shadow:0 6px 20px rgba(0,0,0,.28);font-size:.85rem;line-height:1.55}
 .tt-state{font-weight:700;font-size:.92rem;color:#90cdf4;margin-bottom:2px}
 .tt-count{color:#e2e8f0}
+.tt-pct{color:#a0f0c0;font-size:.82rem}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>🗺️ India State User Distribution Map</h1>
-  <p>Upload an Excel file to visualize user counts across Indian states</p>
+  <h1>🗺️ India State Coverage Map</h1>
+  <p>Upload an Excel file to visualize coverage % and user counts across Indian states</p>
 </header>
 
 <main>
   <div class="notice">
     <span class="notice-title">📋 How to use</span>
     <ul>
-      <li>Prepare an Excel (.xlsx / .xls) file with a <strong>State</strong> column and a count column (e.g. <strong>Count</strong>, <strong>Users</strong>, <strong>Total</strong>)</li>
+      <li>Prepare an Excel (.xlsx / .xls) file with a <strong>State</strong> column, a count column (e.g. <strong>Count</strong>, <strong>Users</strong>), and a <strong>% column</strong> (e.g. <strong>%</strong>, <strong>% Covered</strong>, <strong>Coverage</strong>)</li>
+      <li>Map colours are driven by the <strong>% (0–100)</strong> column using 4 brackets: <strong>0–20 · 21–50 · 51–80 · 80–100</strong></li>
+      <li>User count is still shown below each state name on the map</li>
       <li>Upload the file by dragging it below or clicking to browse</li>
       <li>Hover over states to see details — download the map as SVG or high-res PNG</li>
-      <li><em>Requires an internet connection to load India map data on first use</em></li>
     </ul>
   </div>
 
@@ -80,6 +82,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
     <div class="sample-row">
       <span>No file?</span>
       <button class="btn btn-outline btn-sm" onclick="loadSample()">Try sample data</button>
+      <button class="btn btn-outline btn-sm" onclick="downloadSampleXLSX()">⬇ Download sample Excel</button>
     </div>
     <div class="status" id="status"></div>
   </div>
@@ -87,25 +90,41 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
   <div id="map-section">
     <div class="card">
       <div class="map-header">
-        <div class="map-title">User Distribution — Indian States</div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <label style="font-size:.83rem;font-weight:600;color:#4a5568">Color:</label>
-          <select id="color-scheme" onchange="renderMap()" style="font-size:.83rem;padding:5px 10px;border-radius:6px;border:1px solid #cbd5e0;background:#fff;cursor:pointer">
+        <div class="map-title">Coverage &amp; User Distribution — Indian States</div>
+        <div class="dl-btns">
+          <button class="btn btn-primary btn-sm" onclick="dlSVG()">⬇ SVG</button>
+          <button class="btn btn-green btn-sm" onclick="dlPNG()">⬇ PNG</button>
+        </div>
+      </div>
+      <!-- Color controls -->
+      <div id="color-controls" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;background:#f7fafc;border-radius:8px;border:1px solid #e2e8f0">
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:.83rem;font-weight:600;color:#4a5568">Mode:</span>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:.83rem">
+            <input type="radio" name="colorMode" value="4color" checked onchange="setColorMode('4color')"> 4 Colors
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:.83rem">
+            <input type="radio" name="colorMode" value="gradient" onchange="setColorMode('gradient')"> Gradient
+          </label>
+        </div>
+        <div id="ctrl-4color" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:#555">0–20%&nbsp;<input type="color" id="c0" value="#FEF08A" oninput="updateBracketColor(0,this.value)"></label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:#555">21–50%&nbsp;<input type="color" id="c1" value="#FDBA74" oninput="updateBracketColor(1,this.value)"></label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:#555">51–80%&nbsp;<input type="color" id="c2" value="#93C5FD" oninput="updateBracketColor(2,this.value)"></label>
+          <label style="display:flex;align-items:center;gap:4px;font-size:.8rem;color:#555">80–100%&nbsp;<input type="color" id="c3" value="#818CF8" oninput="updateBracketColor(3,this.value)"></label>
+        </div>
+        <div id="ctrl-gradient" style="display:none;align-items:center;gap:8px">
+          <span style="font-size:.83rem;font-weight:600;color:#4a5568">Scheme:</span>
+          <select id="gradient-scheme" onchange="renderMap()" style="font-size:.83rem;padding:5px 10px;border-radius:6px;border:1px solid #cbd5e0;background:#fff;cursor:pointer">
             <option value="Blues">Blues</option>
-            <option value="Greens">Greens</option>
-            <option value="Oranges">Oranges</option>
             <option value="Purples">Purples</option>
-            <option value="Reds">Reds</option>
+            <option value="Oranges">Oranges</option>
             <option value="YlOrRd">Yellow → Red</option>
             <option value="YlGnBu">Yellow → Blue</option>
-            <option value="RdPu">Red → Purple</option>
             <option value="BuPu">Blue → Purple</option>
-            <option value="GnBu">Green → Blue</option>
+            <option value="PuRd">Purple → Red</option>
+            <option value="RdPu">Red → Purple</option>
           </select>
-          <div class="dl-btns">
-            <button class="btn btn-primary btn-sm" onclick="dlSVG()">⬇ SVG</button>
-            <button class="btn btn-green btn-sm" onclick="dlPNG()">⬇ PNG</button>
-          </div>
         </div>
       </div>
       <div class="stats" id="stats"></div>
@@ -114,6 +133,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
         <div class="tooltip" id="tooltip">
           <div class="tt-state" id="tt-state"></div>
           <div class="tt-count" id="tt-count"></div>
+          <div class="tt-pct"   id="tt-pct"></div>
         </div>
       </div>
     </div>
@@ -125,7 +145,56 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
 
 const GEO_URL = 'https://raw.githubusercontent.com/ny719467-oss/Indian-states-district/main/India%20(1).json';
 
-const SAMPLE = {
+// ── 4 fixed % coverage brackets ───────────────────────────────────────────────
+const BRACKETS = [
+  { label: '0 – 20%',   color: '#FEF08A' },   // light yellow
+  { label: '21 – 50%',  color: '#FDBA74' },   // peach / light orange
+  { label: '51 – 80%',  color: '#93C5FD' },   // sky blue
+  { label: '80 – 100%', color: '#818CF8' },   // indigo
+];
+
+function getBracketColor(pct){
+  if(pct===null||pct===undefined||isNaN(pct)) return '#edf1f6';
+  if(pct<=20) return BRACKETS[0].color;
+  if(pct<=50) return BRACKETS[1].color;
+  if(pct<80)  return BRACKETS[2].color;
+  return BRACKETS[3].color;
+}
+
+// ── Color mode state ──────────────────────────────────────────────────────────
+let colorMode='4color';
+
+const GRADIENT_SCHEMES={
+  Blues:d3.interpolateBlues, Purples:d3.interpolatePurples,
+  Oranges:d3.interpolateOranges, YlOrRd:d3.interpolateYlOrRd,
+  YlGnBu:d3.interpolateYlGnBu, BuPu:d3.interpolateBuPu,
+  PuRd:d3.interpolatePuRd, RdPu:d3.interpolateRdPu,
+};
+
+function getStateColor(pct){
+  if(pct===null||pct===undefined||isNaN(pct)) return '#edf1f6';
+  if(colorMode==='gradient'){
+    const sel=document.getElementById('gradient-scheme');
+    const interp=GRADIENT_SCHEMES[(sel&&sel.value)||'Blues']||d3.interpolateBlues;
+    return interp(0.1+(pct/100)*0.85);
+  }
+  return getBracketColor(pct);
+}
+
+function setColorMode(mode){
+  colorMode=mode;
+  document.getElementById('ctrl-4color').style.display=mode==='4color'?'flex':'none';
+  document.getElementById('ctrl-gradient').style.display=mode==='gradient'?'flex':'none';
+  if(geoData&&percentData) renderMap();
+}
+
+function updateBracketColor(idx,color){
+  BRACKETS[idx].color=color;
+  if(geoData&&percentData) renderMap();
+}
+
+// ── Sample data ───────────────────────────────────────────────────────────────
+const SAMPLE_COUNTS = {
   'Maharashtra':15420,'Uttar Pradesh':12800,'Tamil Nadu':9650,
   'Karnataka':8900,'Gujarat':7800,'West Bengal':7200,
   'Rajasthan':6500,'Madhya Pradesh':5800,'Andhra Pradesh':5200,
@@ -133,11 +202,23 @@ const SAMPLE = {
   'Haryana':3200,'Punjab':2900,'Odisha':2600,'Assam':2100,
   'Jharkhand':1800,'Chhattisgarh':1500,'Uttarakhand':1200,
   'Himachal Pradesh':900,'Tripura':600,'Goa':500,
-  'Jammu and Kashmir':800,'Manipur':400,'Meghalaya':350,
+  'Jammu and Kashmir':800,'Ladakh':320,'Manipur':400,'Meghalaya':350,
   'Nagaland':280,'Arunachal Pradesh':220,'Mizoram':180,'Sikkim':120
 };
 
-// canonical state code map
+const SAMPLE_PCT = {
+  'Maharashtra':85,'Uttar Pradesh':48,'Tamil Nadu':78,
+  'Karnataka':62,'Gujarat':71,'West Bengal':55,
+  'Rajasthan':38,'Madhya Pradesh':42,'Andhra Pradesh':67,
+  'Telangana':74,'Delhi':90,'Kerala':88,'Bihar':22,
+  'Haryana':60,'Punjab':65,'Odisha':35,'Assam':30,
+  'Jharkhand':18,'Chhattisgarh':15,'Uttarakhand':52,
+  'Himachal Pradesh':70,'Tripura':40,'Goa':95,
+  'Jammu and Kashmir':25,'Ladakh':10,'Manipur':12,'Meghalaya':20,
+  'Nagaland':8,'Arunachal Pradesh':5,'Mizoram':17,'Sikkim':45
+};
+
+// ── State canonical map ───────────────────────────────────────────────────────
 const CAN = {
   'andaman and nicobar islands':'AN','andaman & nicobar islands':'AN',
   'andaman and nicobar island':'AN','andaman & nicobar island':'AN',
@@ -169,7 +250,6 @@ const CAN = {
   'west bengal':'WB',
 };
 
-// Short display names for labels (keyed by exact st_nm values from TopoJSON)
 const SHORT = {
   'Andaman and Nicobar Islands':'Andaman & Nicobar Islands',
   'Andaman & Nicobar Island':'Andaman & Nicobar Islands',
@@ -180,17 +260,15 @@ const SHORT = {
   'Jammu & Kashmir':'Jammu & Kashmir',
 };
 
-// States that always get outside labels (too small to label inside)
 const FORCE_OUTSIDE = new Set([
   'Goa',
   'Andaman and Nicobar Islands','Andaman & Nicobar Island','Andaman and Nicobar Island',
 ]);
 
-// States that are too tiny — skip labels entirely (still coloured on map)
+const FORCE_BLACK_LABEL = new Set(['KL','SK']); // Kerala, Sikkim always black text
+
 const NO_LABEL = new Set([
-  'Lakshadweep',
-  'Puducherry',
-  'Chandigarh',
+  'Lakshadweep','Puducherry','Chandigarh',
   'Delhi','NCT of Delhi','National Capital Territory of Delhi',
   'Dadra and Nagar Haveli and Daman and Diu',
   'Daman and Diu','Dadra and Nagar Haveli','The Dadra and Nagar Haveli',
@@ -203,7 +281,6 @@ function norm(s){
 function canonical(s){ const n=norm(s); return CAN[n]||n; }
 function stateProp(f){
   const p=f.properties;
-  // st_nm is the confirmed property in the TopoJSON source
   return p.st_nm||p.ST_NM||p.NAME_1||p.State||p.state||p.name||p.NAME||p.statename||p.STNAME||p.GEO_NAME||'';
 }
 function dispName(s){ return SHORT[s]||s; }
@@ -215,7 +292,20 @@ function fmt(n){
   return n.toLocaleString();
 }
 
-let geoData=null, userData=null;
+let geoData=null, userData=null, percentData=null;
+
+function downloadSampleXLSX(){
+  const rows=[['State','Count','%']];
+  const allStates=new Set([...Object.keys(SAMPLE_COUNTS),...Object.keys(SAMPLE_PCT)]);
+  allStates.forEach(state=>{
+    rows.push([state, SAMPLE_COUNTS[state]??'', SAMPLE_PCT[state]??'']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:10},{wch:8}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'States');
+  XLSX.writeFile(wb,'india-map-sample.xlsx');
+}
 
 // ── Upload wiring ─────────────────────────────────────────────────────────────
 const zone=document.getElementById('upload-zone');
@@ -243,20 +333,34 @@ function processFile(file){
       const rows=XLSX.utils.sheet_to_json(ws,{header:1});
       if(rows.length<2){ setStatus('File is empty or has no data rows.','error'); return; }
       const hdrs=rows[0].map(h=>(h||'').toString().toLowerCase().trim());
+
       const stateCol=hdrs.findIndex(h=>h==='state'||h.startsWith('state'));
       let countCol=hdrs.findIndex(h=>h==='count'||h.includes('count')||h==='users'||h.includes('user')||h==='total'||h.includes('total'));
+      // detect % column: %, percent, pct, coverage, covered
+      const pctCol=hdrs.findIndex(h=>h==='%'||h.includes('%')||h==='pct'||h.includes('percent')||h.includes('coverage')||h.includes('covered'));
+
       if(stateCol===-1){ setStatus('No "State" column found.','error'); return; }
       if(countCol===-1) countCol=hdrs.length===2?(stateCol===0?1:0):-1;
-      if(countCol===-1){ setStatus('No count column found. Name it "Count", "Users", or "Total".','error'); return; }
-      const parsed={};
+      if(pctCol===-1){ setStatus('No % column found. Add a column named "%", "% Covered", or "Coverage".','error'); return; }
+
+      const parsed={}, parsedPct={};
       let n=0;
       for(let i=1;i<rows.length;i++){
-        const row=rows[i]; const raw=row[stateCol]; const cnt=parseFloat(row[countCol]);
-        if(raw&&!isNaN(cnt)&&cnt>=0){ const k=canonical(raw); parsed[k]=(parsed[k]||0)+cnt; n++; }
+        const row=rows[i];
+        const raw=row[stateCol];
+        if(!raw) continue;
+        const k=canonical(raw);
+        if(countCol!==-1){
+          const cnt=parseFloat(row[countCol]);
+          if(!isNaN(cnt)&&cnt>=0){ parsed[k]=(parsed[k]||0)+cnt; n++; }
+        }
+        const pv=parseFloat(row[pctCol]);
+        if(!isNaN(pv)) parsedPct[k]=Math.min(100,Math.max(0,pv));
       }
-      if(!n){ setStatus('No valid data rows found.','error'); return; }
-      userData=parsed;
-      setStatus(`Loaded ${n} row${n>1?'s':''} from "${file.name}" — rendering…`,'success');
+      if(!Object.keys(parsedPct).length){ setStatus('No valid % values found in the % column.','error'); return; }
+      userData=Object.keys(parsed).length?parsed:null;
+      percentData=parsedPct;
+      setStatus(`Loaded from "${file.name}" — rendering…`,'success');
       loadAndRender();
     } catch(err){ setStatus('Error: '+err.message,'error'); }
   };
@@ -265,47 +369,27 @@ function processFile(file){
 
 function loadSample(){
   userData={};
-  for(const [k,v] of Object.entries(SAMPLE)) userData[canonical(k)]=v;
+  percentData={};
+  for(const [k,v] of Object.entries(SAMPLE_COUNTS)) userData[canonical(k)]=v;
+  for(const [k,v] of Object.entries(SAMPLE_PCT)) percentData[canonical(k)]=v;
   setStatus('Sample data loaded — rendering…','success');
   loadAndRender();
 }
 
-// Normalise whatever the server returns into a standard {type,features:[]} object.
-// Handles both GeoJSON FeatureCollections and TopoJSON Topologies.
+// ── GeoJSON normalisation ─────────────────────────────────────────────────────
 function normaliseGeoJSON(raw){
   if(!raw) return null;
-
-  // ── TopoJSON ──────────────────────────────────────────────────────────────
-  if(raw.type==='Topology' && raw.objects){
-    // Prefer the "states" object; fall back to the first available object
-    const objKey = raw.objects.states ? 'states'
-                 : raw.objects.States ? 'States'
-                 : Object.keys(raw.objects)[0];
+  if(raw.type==='Topology'&&raw.objects){
+    const objKey=raw.objects.states?'states':raw.objects.States?'States':Object.keys(raw.objects)[0];
     if(!objKey) return null;
-    return topojson.feature(raw, raw.objects[objKey]);   // returns FeatureCollection
+    return topojson.feature(raw,raw.objects[objKey]);
   }
-
-  // ── GeoJSON ───────────────────────────────────────────────────────────────
-  if(raw.type==='FeatureCollection' && Array.isArray(raw.features)) return raw;
-  if(Array.isArray(raw)) return {type:'FeatureCollection', features:raw};
-  if(raw.type==='Feature') return {type:'FeatureCollection', features:[raw]};
+  if(raw.type==='FeatureCollection'&&Array.isArray(raw.features)) return raw;
+  if(Array.isArray(raw)) return {type:'FeatureCollection',features:raw};
+  if(raw.type==='Feature') return {type:'FeatureCollection',features:[raw]};
   const arr=raw.features||raw.data||raw.states||raw.geojson;
-  if(Array.isArray(arr)) return {type:'FeatureCollection', features:arr};
+  if(Array.isArray(arr)) return {type:'FeatureCollection',features:arr};
   return null;
-}
-
-// Merge Ladakh geometry back into J&K so the traditional boundary is restored.
-function mergeJKLadakh(geo){
-  if(!geo||!Array.isArray(geo.features)) return;
-  const jkIdx=geo.features.findIndex(f=>canonical(stateProp(f))==='JK');
-  const laIdx=geo.features.findIndex(f=>canonical(stateProp(f))==='LA');
-  if(jkIdx===-1||laIdx===-1) return;
-  const toRings=f=>f.geometry.type==='MultiPolygon'
-    ?f.geometry.coordinates:[f.geometry.coordinates];
-  const jkF=geo.features[jkIdx];
-  const laF=geo.features[laIdx];
-  jkF.geometry={type:'MultiPolygon',coordinates:[...toRings(jkF),...toRings(laF)]};
-  geo.features.splice(laIdx,1);
 }
 
 async function loadAndRender(){
@@ -318,88 +402,9 @@ async function loadAndRender(){
       geoData=normaliseGeoJSON(raw);
       if(!geoData||!geoData.features||!geoData.features.length)
         throw new Error('Unexpected GeoJSON format — no features found');
-      mergeJKLadakh(geoData);
     } catch(err){ setStatus('Could not load map: '+err.message,'error'); return; }
   }
   renderMap();
-}
-
-// ── Color scale (power 0.4 for perceptual distribution) ──────────────────────
-const SCHEMES = {
-  Blues:   d3.interpolateBlues,
-  Greens:  d3.interpolateGreens,
-  Oranges: d3.interpolateOranges,
-  Purples: d3.interpolatePurples,
-  Reds:    d3.interpolateReds,
-  YlOrRd:  d3.interpolateYlOrRd,
-  YlGnBu:  d3.interpolateYlGnBu,
-  RdPu:    d3.interpolateRdPu,
-  BuPu:    d3.interpolateBuPu,
-  GnBu:    d3.interpolateGnBu,
-};
-
-function makeColorFn(maxVal){
-  const sel=document.getElementById('color-scheme');
-  const interp=SCHEMES[(sel&&sel.value)||'Blues']||d3.interpolateBlues;
-  const POW=0.4;
-  const maxP=Math.pow(maxVal||1,POW);
-  return v=>{
-    if(!v||v<=0) return '#edf1f6';
-    const t=Math.pow(Math.min(v,maxVal),POW)/maxP;
-    return interp(0.12+t*0.88);
-  };
-}
-
-// Round a value to a visually clean "nice" number for legend labels
-function niceNum(v){
-  if(v<=5)   return Math.round(v);
-  if(v<20)   return Math.round(v/2)*2;
-  if(v<100)  return Math.round(v/10)*10;
-  if(v<500)  return Math.round(v/50)*50;
-  if(v<2000) return Math.round(v/100)*100;
-  if(v<10000)return Math.round(v/500)*500;
-  if(v<50000)return Math.round(v/1000)*1000;
-  if(v<200000)return Math.round(v/5000)*5000;
-  return Math.round(v/10000)*10000;
-}
-
-// Compute 5 category breaks that are perceptually even on the power scale,
-// then snap each break to a nice round number.
-// Returns [{label, color}, ...] with 0 + N non-zero buckets + an open-ended top bucket.
-function catRanges(maxVal, getColor){
-  const cats=[{label:'0 users', color:'#edf1f6'}];
-  if(!maxVal||maxVal<=0) return cats;
-
-  const POW=0.4, N=5;
-  const maxP=Math.pow(maxVal,POW);
-
-  // Raw breaks in value-space via inverse power transform
-  let breaks=[];
-  for(let i=1;i<N;i++){
-    const raw=Math.pow((i/N)*maxP,1/POW);
-    breaks.push(niceNum(raw));
-  }
-
-  // Ensure strictly increasing (dedup after rounding)
-  breaks=breaks.filter((b,i,a)=>i===0?b>=1:b>a[i-1]);
-
-  let prev=0;
-  breaks.forEach(hi=>{
-    const lo=prev+1;
-    cats.push({
-      label:`${lo.toLocaleString()} – ${hi.toLocaleString()} users`,
-      color:getColor((lo+hi)/2)
-    });
-    prev=hi;
-  });
-
-  // Open-ended top bucket
-  cats.push({
-    label:`${(prev+1).toLocaleString()}+ users`,
-    color:getColor(maxVal)
-  });
-
-  return cats;
 }
 
 // ── Main render ───────────────────────────────────────────────────────────────
@@ -416,63 +421,44 @@ function renderMap(){
 
   const wrapper=document.getElementById('map-wrapper');
   const W0=Math.max(wrapper.clientWidth||800,500);
-
-  // Right legend width (bar + ticks + labels + rotated title)
-  const RW=90;
   const W=W0;
-  const H=Math.round(W0*0.82);   // 0.82 fits India's natural aspect ratio
+  const H=Math.round(W0*0.82);
 
-  // Map area: leave RW on the right for legend, 30px top, 10px bottom
-  const mapLeft=10, mapTop=30, mapRight=W-RW-4, mapBottom=H-10;
-
-  svg.attr('viewBox',`0 0 ${W} ${H}`)
-     .attr('xmlns','http://www.w3.org/2000/svg');
-
-  // white background
+  svg.attr('viewBox',`0 0 ${W} ${H}`).attr('xmlns','http://www.w3.org/2000/svg');
   svg.append('rect').attr('width',W).attr('height',H).attr('fill','#ffffff');
 
-  // Projection fit inside map area
-  const proj=d3.geoMercator()
-    .fitExtent([[mapLeft,mapTop],[mapRight,mapBottom]],geoData);
+  const proj=d3.geoMercator().fitExtent([[10,30],[W-10,H-10]],geoData);
   const pathGen=d3.geoPath().projection(proj);
 
-  // Build displayData: fold Ladakh counts into J&K so merged shape uses combined value
-  const displayData=Object.assign({},userData);
-  if(displayData['LA']){
-    displayData['JK']=(displayData['JK']||0)+displayData['LA'];
-    delete displayData['LA'];
-  }
+  const displayData=Object.assign({},userData||{});
 
-  // Color scale
-  const allVals=geoData.features.map(f=>displayData[canonical(stateProp(f))]||0);
-  const maxVal=d3.max(allVals)||1;
-  const getColor=makeColorFn(maxVal);
+  const pctData=percentData||{};
 
-  const defs=svg.append('defs');
-
-  // Tooltip
   const tt=document.getElementById('tooltip');
   const ttS=document.getElementById('tt-state');
   const ttC=document.getElementById('tt-count');
+  const ttP=document.getElementById('tt-pct');
 
   // ── Draw states ──
-  const statesG=svg.append('g');
-  statesG.selectAll('path')
+  svg.append('g').selectAll('path')
     .data(geoData.features)
     .join('path')
     .attr('d',pathGen)
-    .attr('fill',d=>getColor(displayData[canonical(stateProp(d))]||0))
+    .attr('fill',d=>getStateColor(pctData[canonical(stateProp(d))]??null))
     .attr('stroke','#ffffff')
     .attr('stroke-width',0.6)
     .style('cursor','pointer')
     .on('mousemove',function(event,d){
       const name=stateProp(d);
-      const cnt=displayData[canonical(name)]||0;
+      const key=canonical(name);
+      const cnt=displayData[key]||0;
+      const pct=pctData[key];
       ttS.textContent=name||'Unknown';
-      ttC.textContent=cnt>0?`👥 ${cnt.toLocaleString()} users`:'No data';
+      ttC.textContent=cnt>0?`👥 ${cnt.toLocaleString()} users`:'No user data';
+      ttP.textContent=pct!==undefined?`📊 ${pct.toFixed(1)}% covered`:'No % data';
       tt.style.display='block';
       const rect=wrapper.getBoundingClientRect();
-      let x=event.clientX-rect.left+14,y=event.clientY-rect.top-14;
+      let x=event.clientX-rect.left+14, y=event.clientY-rect.top-14;
       if(x+190>wrapper.clientWidth) x=event.clientX-rect.left-200;
       if(y<0) y=10;
       tt.style.left=x+'px'; tt.style.top=y+'px';
@@ -483,20 +469,15 @@ function renderMap(){
   const labelG=svg.append('g');
   const fs0=Math.max(4,Math.min(10,W0/110));
 
-  // Per-state label nudge: [dx, dy] as fraction of bounding box
-  const NUDGE = {
-    'AP':[-0.12, 0.20],
-    'AN':[-0.1,  0],
-    'KA':[-0.10, 0],
-    'MP':[ 0,    0.10],
+  const NUDGE={
+    'AP':[-0.12,0.20],'AN':[-0.1,0],'KA':[-0.10,0],'MP':[0,0.10],
   };
 
-  // Returns true if a CSS colour string is dark (luminance < 0.35)
   function isDark(cssColor){
     const c=d3.color(cssColor); if(!c) return false;
     const r=c.r/255, g=c.g/255, b=c.b/255;
     const toL=v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);
-    return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b) < 0.35;
+    return 0.2126*toL(r)+0.7152*toL(g)+0.0722*toL(b)<0.35;
   }
 
   geoData.features.forEach(f=>{
@@ -504,8 +485,10 @@ function renderMap(){
     if(NO_LABEL.has(name)) return;
     const key=canonical(name);
     const cnt=displayData[key]||0;
+    const pct=pctData[key];
     const label=dispName(name);
-    const txtColor=isDark(getColor(cnt))?'#fff':'#000';
+    const fillColor=getStateColor(pct??null);
+    const txtColor=FORCE_BLACK_LABEL.has(key)?'#000':isDark(fillColor)?'#fff':'#000';
     const bounds=pathGen.bounds(f);
     if(!bounds||isNaN(bounds[0][0])) return;
     const bw=bounds[1][0]-bounds[0][0];
@@ -515,25 +498,22 @@ function renderMap(){
     const nudge=NUDGE[key];
     if(nudge){ cx+=bw*nudge[0]; cy+=bh*nudge[1]; }
 
-    // Split at first space: "Madhya Pradesh" → ["Madhya","Pradesh"]
     const words=label.split(' ');
     const line1=words[0];
     const line2=words.length>1?words.slice(1).join(' '):null;
     const nameLines=line2?2:1;
-    const longestChars=Math.max(line1.length, line2?line2.length:0);
+    const longestChars=Math.max(line1.length,line2?line2.length:0);
 
-    // Font sized to fit strictly within state bounding box
-    const fsByW = bw / (longestChars * 0.68);
-    const fsByH = bh / (nameLines * 1.5 + (cnt>0 ? 1.5 : 0));
-    const fs = Math.max(4, Math.min(fs0, fsByW, fsByH));
-    const fsName = fs * 1.25;
+    const fsByW=bw/(longestChars*0.68);
+    const fsByH=bh/(nameLines*1.5+(cnt>0?1.5:0));
+    const fs=Math.max(4,Math.min(fs0,fsByW,fsByH));
+    const fsName=fs*1.25;
 
-    // Total block height: name lines + optional count
-    const nameH = nameLines * fsName * 1.2;
-    const totalH = nameH + (cnt>0 ? fs*1.1 : 0);
-    const startY = cy - totalH/2 + fsName*0.5;
+    const nameH=nameLines*fsName*1.2;
+    const totalH=nameH+(cnt>0?fs*1.1:0);
+    const startY=cy-totalH/2+fsName*0.5;
 
-    const g = labelG.append('g');
+    const g=labelG.append('g');
     g.append('text')
       .attr('x',cx).attr('y',startY)
       .attr('text-anchor','middle').attr('dominant-baseline','middle')
@@ -542,7 +522,7 @@ function renderMap(){
       .text(line1);
     if(line2){
       g.append('text')
-        .attr('x',cx).attr('y',startY + fsName*1.2)
+        .attr('x',cx).attr('y',startY+fsName*1.2)
         .attr('text-anchor','middle').attr('dominant-baseline','middle')
         .style('font-size',`${fsName}px`).style('font-weight','700')
         .style('fill',txtColor).style('pointer-events','none')
@@ -550,7 +530,7 @@ function renderMap(){
     }
     if(cnt>0){
       g.append('text')
-        .attr('x',cx).attr('y',startY + nameH + fs*0.5)
+        .attr('x',cx).attr('y',startY+nameH+fs*0.5)
         .attr('text-anchor','middle').attr('dominant-baseline','middle')
         .style('font-size',`${Math.max(5,fs*0.8)}px`).style('font-weight','400')
         .style('fill',txtColor).style('pointer-events','none')
@@ -558,109 +538,89 @@ function renderMap(){
     }
   });
 
-  // ── Right vertical gradient legend ──
-  const lgX    = W - RW + 8;  // left edge of gradient bar
-  const lgBarW = 18;
-  const lgY1   = 44;           // top of bar
-  const lgY2   = H - 70;       // bottom of bar
-  const lgBarH = lgY2 - lgY1;
+  // ── Bottom-left legend (switches between 4-bracket and gradient) ──
+  const catFs=Math.max(8,W0/120);
+  const catPad=6;
+  const catX=12;
 
-  // Vertical gradient: stop 0% = bottom (lgY2 = 0 users = light),
-  //                    stop 100% = top (lgY1 = maxVal = dark)
-  const vGrad=defs.append('linearGradient')
-    .attr('id','vGrad')
-    .attr('gradientUnits','userSpaceOnUse')
-    .attr('x1',0).attr('y1',lgY2)
-    .attr('x2',0).attr('y2',lgY1);
-  for(let i=0;i<=40;i++){
-    const t=i/40;
-    vGrad.append('stop').attr('offset',`${t*100}%`).attr('stop-color',getColor(t*maxVal));
+  if(colorMode==='4color'){
+    const catRowH=Math.round(catFs*2);
+    const catBoxSz=Math.round(catFs*1.2);
+    const catW=Math.round(catFs*15);
+    const catTitleH=Math.round(catFs*2.2);
+    const numRows=BRACKETS.length+1;
+    const catH=catTitleH+numRows*(catRowH+3)+catPad;
+    const catY=H-catH-10;
+    const catG=svg.append('g').attr('transform',`translate(${catX},${catY})`);
+    catG.append('rect')
+      .attr('x',-catPad).attr('y',-catPad)
+      .attr('width',catW+catPad*2).attr('height',catH+catPad*2)
+      .attr('fill','rgba(255,255,255,0.94)').attr('stroke','#d0d7de').attr('stroke-width',0.7).attr('rx',5);
+    catG.append('text').attr('x',0).attr('y',catTitleH-catPad)
+      .style('font-size',`${catFs}px`).style('font-weight','700').style('fill','#2d3748')
+      .text('% Coverage');
+    BRACKETS.forEach((b,i)=>{
+      const ry=catTitleH+i*(catRowH+3);
+      catG.append('rect').attr('x',0).attr('y',ry).attr('width',catBoxSz).attr('height',catBoxSz)
+        .attr('fill',b.color).attr('stroke','#b0bec5').attr('stroke-width',0.5).attr('rx',2);
+      catG.append('text').attr('x',catBoxSz+6).attr('y',ry+catBoxSz/2)
+        .attr('dominant-baseline','middle').style('font-size',`${catFs-0.5}px`).style('fill','#555')
+        .text(b.label);
+    });
+    const ndY=catTitleH+BRACKETS.length*(catRowH+3);
+    catG.append('rect').attr('x',0).attr('y',ndY).attr('width',catBoxSz).attr('height',catBoxSz)
+      .attr('fill','#edf1f6').attr('stroke','#b0bec5').attr('stroke-width',0.5).attr('rx',2);
+    catG.append('text').attr('x',catBoxSz+6).attr('y',ndY+catBoxSz/2)
+      .attr('dominant-baseline','middle').style('font-size',`${catFs-0.5}px`).style('fill','#555')
+      .text('No data');
+  } else {
+    // Gradient legend: horizontal bar 0%→100%
+    const barW=Math.min(220,W0*0.28);
+    const barH=14;
+    const titleH=Math.round(catFs*1.8);
+    const lgH=titleH+barH+18+catPad;
+    const catY=H-lgH-10;
+    const lgG=svg.append('g').attr('transform',`translate(${catX},${catY})`);
+    lgG.append('rect')
+      .attr('x',-catPad).attr('y',-catPad)
+      .attr('width',barW+catPad*2).attr('height',lgH+catPad*2)
+      .attr('fill','rgba(255,255,255,0.94)').attr('stroke','#d0d7de').attr('stroke-width',0.7).attr('rx',5);
+    lgG.append('text').attr('x',0).attr('y',titleH-catPad)
+      .style('font-size',`${catFs}px`).style('font-weight','700').style('fill','#2d3748')
+      .text('% Coverage');
+    // gradient def
+    const gradId='lgBarGrad';
+    const defs2=svg.append('defs');
+    const hGrad=defs2.append('linearGradient').attr('id',gradId)
+      .attr('x1','0%').attr('y1','0%').attr('x2','100%').attr('y2','0%');
+    for(let i=0;i<=20;i++){
+      hGrad.append('stop').attr('offset',`${i*5}%`).attr('stop-color',getStateColor(i*5));
+    }
+    lgG.append('rect').attr('x',0).attr('y',titleH).attr('width',barW).attr('height',barH)
+      .attr('fill',`url(#${gradId})`).attr('rx',3);
+    lgG.append('rect').attr('x',0).attr('y',titleH).attr('width',barW).attr('height',barH)
+      .attr('fill','none').attr('stroke','#b0bec5').attr('stroke-width',0.5).attr('rx',3);
+    const tickFs=Math.max(7,W0/150);
+    [['0%',0,'start'],['50%',barW/2,'middle'],['100%',barW,'end']].forEach(([lbl,x,anchor])=>{
+      lgG.append('text').attr('x',x).attr('y',titleH+barH+11)
+        .attr('text-anchor',anchor).style('font-size',`${tickFs}px`).style('fill','#555').text(lbl);
+    });
   }
 
-  const lgG=svg.append('g');
-  const tickFs=Math.max(7.5,W0/125);
-
-  // Gradient fill + border
-  lgG.append('rect').attr('x',lgX).attr('y',lgY1).attr('width',lgBarW).attr('height',lgBarH)
-    .attr('fill','url(#vGrad)').attr('rx',2);
-  lgG.append('rect').attr('x',lgX).attr('y',lgY1).attr('width',lgBarW).attr('height',lgBarH)
-    .attr('fill','none').attr('stroke','#b0bec5').attr('stroke-width',0.5).attr('rx',2);
-
-  // Tick marks + labels (linearly spaced in value)
-  const ticks=d3.ticks(0,maxVal,6);
-  if(!ticks.includes(0)) ticks.unshift(0);
-  ticks.forEach(v=>{
-    const y=lgY2-(v/maxVal)*lgBarH;
-    lgG.append('line')
-      .attr('x1',lgX+lgBarW).attr('y1',y)
-      .attr('x2',lgX+lgBarW+4).attr('y2',y)
-      .attr('stroke','#718096').attr('stroke-width',0.7);
-    lgG.append('text').attr('x',lgX+lgBarW+6).attr('y',y)
-      .attr('dominant-baseline','middle')
-      .style('font-size',`${tickFs}px`).style('fill','#4a5568')
-      // always use K/M abbreviation to keep labels narrow
-      .text(v>=1000000?`${Math.round(v/1000000)}M`:v>=1000?`${Math.round(v/1000)}K`:v);
-  });
-
-  // Rotated title to the right of tick labels
-  const titleX = W - 7;
-  lgG.append('text')
-    .attr('transform',`rotate(-90,${titleX},${lgY1+lgBarH/2})`)
-    .attr('x',titleX).attr('y',lgY1+lgBarH/2)
-    .attr('text-anchor','middle')
-    .style('font-size',`${Math.max(8.5,W0/115)}px`)
-    .style('font-weight','600').style('fill','#555')
-    .text('Number of Users');
-
-  // ── Bottom-left categorical legend ──
-  const cats=catRanges(maxVal, getColor);   // pass actual color fn
-  const catFs=Math.max(8,W0/120);
-  const catRowH=Math.round(catFs*2);
-  const catBoxSz=Math.round(catFs*1.2);
-  const catW=Math.round(catFs*17);
-  const catTitleH=Math.round(catFs*2.2);
-  const catPad=6;
-  const catH=catTitleH+cats.length*(catRowH+3)+catPad;
-  const catX=12, catY=H-catH-10;
-
-  const catG=svg.append('g').attr('transform',`translate(${catX},${catY})`);
-
-  // Semi-transparent white background
-  catG.append('rect')
-    .attr('x',-catPad).attr('y',-catPad)
-    .attr('width',catW+catPad*2).attr('height',catH+catPad*2)
-    .attr('fill','rgba(255,255,255,0.94)').attr('stroke','#d0d7de').attr('stroke-width',0.7).attr('rx',5);
-
-  catG.append('text').attr('x',0).attr('y',catTitleH-catPad)
-    .style('font-size',`${catFs}px`).style('font-weight','700').style('fill','#2d3748')
-    .text('User Volume');
-
-  cats.forEach((cat,i)=>{
-    const ry=catTitleH+i*(catRowH+3);
-    catG.append('rect')
-      .attr('x',0).attr('y',ry)
-      .attr('width',catBoxSz).attr('height',catBoxSz)
-      .attr('fill',cat.color).attr('stroke','#b0bec5').attr('stroke-width',0.5).attr('rx',2);
-    catG.append('text')
-      .attr('x',catBoxSz+6).attr('y',ry+catBoxSz/2)
-      .attr('dominant-baseline','middle')
-      .style('font-size',`${catFs-0.5}px`).style('fill','#555')
-      .text(cat.label);
-  });
-
   // ── Stats ──
-  let total=0,mapped=0,topName='',topCount=0;
+  let total=0, mapped=0, topName='', topCount=0;
   geoData.features.forEach(f=>{
     const cnt=displayData[canonical(stateProp(f))]||0;
     if(cnt>0){ total+=cnt; mapped++; }
     if(cnt>topCount){ topCount=cnt; topName=stateProp(f); }
   });
+  const pctStates=Object.keys(pctData).length;
   document.getElementById('stats').innerHTML=`
-    <div class="stat"><div class="stat-val">${total.toLocaleString()}</div><div class="stat-lbl">Total Users</div></div>
-    <div class="stat"><div class="stat-val">${mapped}</div><div class="stat-lbl">States Mapped</div></div>
-    ${topName?`<div class="stat"><div class="stat-val">${fmt(topCount)}</div><div class="stat-lbl">Highest: ${dispName(topName)}</div></div>`:''}
+    ${total>0?`<div class="stat"><div class="stat-val">${total.toLocaleString()}</div><div class="stat-lbl">Total Users</div></div>`:''}
+    <div class="stat"><div class="stat-val">${pctStates}</div><div class="stat-lbl">States with % Data</div></div>
+    ${topName&&total>0?`<div class="stat"><div class="stat-val">${fmt(topCount)}</div><div class="stat-lbl">Highest: ${dispName(topName)}</div></div>`:''}
   `;
-  setStatus(`Map rendered — ${mapped} state${mapped!==1?'s':''} plotted.`,'success');
+  setStatus(`Map rendered — ${pctStates} state${pctStates!==1?'s':''} with coverage data.`,'success');
 }
 
 // ── Downloads ─────────────────────────────────────────────────────────────────
@@ -673,7 +633,7 @@ function svgSrc(){
 function dlSVG(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([svgSrc()],{type:'image/svg+xml'}));
-  a.download='india-user-map.svg'; a.click();
+  a.download='india-coverage-map.svg'; a.click();
 }
 function dlPNG(){
   const svgEl=document.getElementById('map-svg');
@@ -690,16 +650,15 @@ function dlPNG(){
     ctx.drawImage(img,0,0,c.width,c.height);
     const a=document.createElement('a');
     a.href=c.toDataURL('image/png',1.0);
-    a.download='india-user-map.png'; a.click();
+    a.download='india-coverage-map.png'; a.click();
     URL.revokeObjectURL(url);
   };
   img.src=url;
 }
 
-// Re-render on window resize (debounced)
 let _resizeT;
 window.addEventListener('resize',()=>{
-  if(!userData||!geoData) return;
+  if(!geoData) return;
   clearTimeout(_resizeT);
   _resizeT=setTimeout(renderMap,220);
 });
