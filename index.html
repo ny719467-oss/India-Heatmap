@@ -117,6 +117,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px}
           <span style="font-size:.83rem;font-weight:600;color:#4a5568">Scheme:</span>
           <select id="gradient-scheme" onchange="renderMap()" style="font-size:.83rem;padding:5px 10px;border-radius:6px;border:1px solid #cbd5e0;background:#fff;cursor:pointer">
             <option value="Blues">Blues</option>
+            <option value="BluesDark">Blues — Darker</option>
             <option value="Purples">Purples</option>
             <option value="Oranges">Oranges</option>
             <option value="YlOrRd">Yellow → Red</option>
@@ -165,18 +166,24 @@ function getBracketColor(pct){
 let colorMode='4color';
 
 const GRADIENT_SCHEMES={
-  Blues:d3.interpolateBlues, Purples:d3.interpolatePurples,
+  Blues:d3.interpolateBlues, BluesDark:d3.interpolateBlues,
+  Purples:d3.interpolatePurples,
   Oranges:d3.interpolateOranges, YlOrRd:d3.interpolateYlOrRd,
   YlGnBu:d3.interpolateYlGnBu, BuPu:d3.interpolateBuPu,
   PuRd:d3.interpolatePuRd, RdPu:d3.interpolateRdPu,
 };
 
+// Per-scheme darkness ceiling (t value at 100%). Default 0.40.
+const GRADIENT_MAX={BluesDark:0.50};
+
 function getStateColor(pct){
   if(pct===null||pct===undefined||isNaN(pct)) return '#edf1f6';
   if(colorMode==='gradient'){
     const sel=document.getElementById('gradient-scheme');
-    const interp=GRADIENT_SCHEMES[(sel&&sel.value)||'Blues']||d3.interpolateBlues;
-    return interp(0.1+(pct/100)*0.40);
+    const scheme=(sel&&sel.value)||'Blues';
+    const interp=GRADIENT_SCHEMES[scheme]||d3.interpolateBlues;
+    const maxT=GRADIENT_MAX[scheme]??0.40;
+    return interp(0.1+(pct/100)*maxT);
   }
   return getBracketColor(pct);
 }
