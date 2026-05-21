@@ -176,7 +176,7 @@ function getStateColor(pct){
   if(colorMode==='gradient'){
     const sel=document.getElementById('gradient-scheme');
     const interp=GRADIENT_SCHEMES[(sel&&sel.value)||'Blues']||d3.interpolateBlues;
-    return interp(0.1+(pct/100)*0.85);
+    return interp(0.1+(pct/100)*0.40);
   }
   return getBracketColor(pct);
 }
@@ -202,6 +202,7 @@ const SAMPLE_COUNTS = {
   'Haryana':3200,'Punjab':2900,'Odisha':2600,'Assam':2100,
   'Jharkhand':1800,'Chhattisgarh':1500,'Uttarakhand':1200,
   'Himachal Pradesh':900,'Tripura':600,'Goa':500,
+  'Andaman and Nicobar Islands':310,
   'Jammu and Kashmir':800,'Ladakh':320,'Manipur':400,'Meghalaya':350,
   'Nagaland':280,'Arunachal Pradesh':220,'Mizoram':180,'Sikkim':120
 };
@@ -214,6 +215,7 @@ const SAMPLE_PCT = {
   'Haryana':60,'Punjab':65,'Odisha':35,'Assam':30,
   'Jharkhand':18,'Chhattisgarh':15,'Uttarakhand':52,
   'Himachal Pradesh':70,'Tripura':40,'Goa':95,
+  'Andaman and Nicobar Islands':33,
   'Jammu and Kashmir':25,'Ladakh':10,'Manipur':12,'Meghalaya':20,
   'Nagaland':8,'Arunachal Pradesh':5,'Mizoram':17,'Sikkim':45
 };
@@ -251,9 +253,9 @@ const CAN = {
 };
 
 const SHORT = {
-  'Andaman and Nicobar Islands':'Andaman & Nicobar Islands',
-  'Andaman & Nicobar Island':'Andaman & Nicobar Islands',
-  'Andaman and Nicobar Island':'Andaman & Nicobar Islands',
+  'Andaman and Nicobar Islands':'A&N Islands',
+  'Andaman & Nicobar Island':'A&N Islands',
+  'Andaman and Nicobar Island':'A&N Islands',
   'Dadra and Nagar Haveli and Daman and Diu':'D&NH/DD',
   'The Dadra and Nagar Haveli':'D&NH',
   'Jammu and Kashmir':'Jammu & Kashmir',
@@ -504,10 +506,17 @@ function renderMap(){
     const nameLines=line2?2:1;
     const longestChars=Math.max(line1.length,line2?line2.length:0);
 
-    const fsByW=bw/(longestChars*0.68);
-    const fsByH=bh/(nameLines*1.5+(cnt>0?1.5:0));
-    const fs=Math.max(4,Math.min(fs0,fsByW,fsByH));
-    const fsName=fs*1.25;
+    // FORCE_OUTSIDE states (A&N, Goa) are too small/narrow for bbox-based sizing
+    let fs, fsName;
+    if(FORCE_OUTSIDE.has(name)){
+      fs=Math.max(5,fs0*0.75);
+      fsName=fs*1.25;
+    } else {
+      const fsByW=bw/(longestChars*0.68);
+      const fsByH=bh/(nameLines*1.5+(cnt>0?1.5:0));
+      fs=Math.max(4,Math.min(fs0,fsByW,fsByH));
+      fsName=fs*1.25;
+    }
 
     const nameH=nameLines*fsName*1.2;
     const totalH=nameH+(cnt>0?fs*1.1:0);
