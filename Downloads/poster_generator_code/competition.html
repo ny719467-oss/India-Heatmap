@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competition Image Generator — Sarpanch Samvaad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Oswald:wght@500;600;700&family=Noto+Sans:ital,wght@0,400;0,600;0,700;0,800;0,900;1,600;1,700&family=Noto+Sans+Devanagari:wght@400;600;700;800;900&family=Noto+Sans+Gujarati:wght@400;600;700;800&family=Noto+Sans+Gurmukhi:wght@400;600;700;800&family=Noto+Sans+Telugu:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@400;600;700;800&family=Noto+Sans+Bengali:wght@400;600;700;800&family=Noto+Sans+Tamil:wght@400;600;700;800&family=Noto+Sans+Oriya:wght@400;600;700;800&family=Noto+Sans+Malayalam:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sidebar:#f0f4f8;--surface:#ffffff;--surface2:#e8edf3;
+  --accent:#2563eb;--accent2:#059669;--text:#1a202c;--muted:#64748b;
+  --ibg:#f8fafc;--iborder:#cbd5e1;--r:10px;--font:'Noto Sans',sans-serif;
+}
+body{font-family:var(--font);background:var(--sidebar);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+.header{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--iborder);position:sticky;top:0;z-index:100}
+.hlogo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1e5631,#4caf50);display:flex;align-items:center;justify-content:center;font-size:18px}
+.header h1{font-size:16px;font-weight:700}
+.header h1 span{color:var(--muted);font-weight:400;font-size:13px;margin-left:8px}
+.hbadge{margin-left:auto;background:rgba(59,130,246,.15);color:var(--accent);border:1px solid rgba(59,130,246,.3);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600}
+.main{display:flex;flex:1;min-height:0}
+
+/* Panel */
+.panel{width:400px;min-width:380px;background:var(--surface);border-right:1px solid var(--iborder);overflow-y:auto;padding:0;display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--iborder)}
+.tab{flex:1;padding:12px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.tab-panel{display:none;flex-direction:column;gap:0;padding:20px 18px;flex:1}
+.tab-panel.active{display:flex}
+.stitle{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;margin-top:4px}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fg label{font-size:12px;font-weight:600;color:var(--text)}
+.fg .hint{font-size:10px;color:var(--muted)}
+.fg input[type=text],.fg input[type=date],.fg select,.fg textarea{background:var(--ibg);border:1px solid var(--iborder);border-radius:7px;color:var(--text);font-family:var(--font);font-size:12px;padding:8px 11px;outline:none;transition:border-color .2s;width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent)}
+.fg textarea{resize:vertical;min-height:60px;line-height:1.5}
+.row2{display:flex;gap:10px}.row2 .fg{flex:1;margin-bottom:0}
+.color-wrap{display:flex;align-items:center;gap:7px;background:var(--ibg);border:1px solid var(--iborder);border-radius:7px;padding:5px 10px}
+.color-wrap input[type=color]{width:26px;height:26px;border:none;background:none;border-radius:5px;cursor:pointer;padding:0}
+.color-wrap input[type=text]{background:none;border:none;color:var(--text);font-size:12px;font-family:var(--font);width:72px;padding:0;outline:none}
+
+/* Asset upload */
+.asset-upload{display:flex;align-items:center;gap:10px;background:var(--ibg);border:1px solid var(--iborder);border-radius:8px;padding:8px 12px;cursor:pointer;transition:border-color .2s}
+.asset-upload:hover{border-color:var(--accent)}
+.asset-thumb{width:44px;height:44px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.asset-thumb img{width:100%;height:100%;object-fit:contain}
+.asset-info{flex:1}
+.asset-info .aname{font-size:12px;font-weight:600}
+.asset-info .astatus{font-size:10px;color:var(--muted);margin-top:2px}
+.asset-clear{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:5px;padding:3px 8px;font-size:10px;cursor:pointer;font-family:var(--font);display:none}
+.asset-clear.visible{display:block}
+
+/* Lang chips */
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{background:var(--surface2);border:1px solid var(--iborder);border-radius:5px;padding:3px 9px;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.chip.on{background:rgba(59,130,246,.2);border-color:var(--accent);color:var(--accent)}
+
+/* Action area */
+.actions{padding:16px 18px;border-top:1px solid var(--iborder);display:flex;flex-direction:column;gap:8px}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 18px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;width:100%}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#2563eb}
+.btn-success{background:var(--accent2);color:#fff}.btn-success:hover{background:#059669}
+.btn-translate{background:#d97706;color:#fff}.btn-translate:hover{background:#b45309}
+.btn:disabled{background:#2a3d5a;color:var(--muted);cursor:not-allowed}
+.status{background:var(--surface2);border:1px solid var(--iborder);border-radius:7px;padding:9px 13px;font-size:11px;color:var(--muted);min-height:36px;display:flex;align-items:center;gap:7px}
+.status.run{color:var(--accent);border-color:rgba(59,130,246,.4)}
+.status.ok{color:var(--accent2);border-color:rgba(16,185,129,.4)}
+.status.err{color:#f87171;border-color:rgba(248,113,113,.4)}
+.spin{width:12px;height:12px;border:2px solid rgba(59,130,246,.3);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pbar-wrap{height:3px;background:var(--surface2);border-radius:2px;overflow:hidden;display:none}
+.pbar{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;width:0}
+hr.div{border:none;border-top:1px solid var(--iborder);margin:6px 0}
+
+/* Preview */
+.preview{flex:1;padding:22px;overflow-y:auto;background:#e2e8f0}
+.prev-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.prev-header h2{font-size:14px;font-weight:700}
+.prev-count{font-size:11px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--iborder);border-radius:10px;overflow:hidden;transition:transform .2s,border-color .2s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card-top{position:relative}
+.card canvas{width:100%;display:block;aspect-ratio:1}
+.clang{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:.5px}
+.ctype{position:absolute;top:7px;right:7px;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);color:#ccc;font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px}
+.card-foot{padding:9px 11px;display:flex;align-items:center;justify-content:space-between}
+.lname{font-size:11px;font-weight:600}
+.dlbtn{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:5px;padding:3px 9px;font-size:10px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
+.dlbtn:hover{background:rgba(59,130,246,.25)}
+.empty{grid-column:1/-1;text-align:center;padding:70px 20px;color:var(--muted)}
+.empty .ei{font-size:44px;margin-bottom:14px}
+.empty p{font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="hlogo">🌾</div>
+  <h1>Competition Image Generator <span>Sarpanch Samvaad</span></h1>
+  <div class="hbadge">12 Languages</div>
+</header>
+
+<div class="main">
+<aside class="panel">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('details')">Details</button>
+    <button class="tab" onclick="switchTab('assets')">Assets</button>
+    <button class="tab" onclick="switchTab('colors')">Colors</button>
+  </div>
+
+  <!-- TAB: Details -->
+  <div class="tab-panel active" id="tab-details">
+    <div class="stitle">Competition Poster</div>
+    <div class="fg"><label>Month & Year</label><input type="text" id="inp-month" placeholder="e.g. June 2026"></div>
+    <div class="fg"><label>Month Theme</label><input type="text" id="inp-theme" placeholder="e.g. Clean and Green Panchayat"><span class="hint">Shown as "JUNE THEME: CLEAN AND GREEN PANCHAYAT"</span></div>
+    <div class="fg"><label>Competition Name / Description</label><textarea id="inp-name" rows="2" placeholder="e.g. Swachh Gaon Abhiyan — showcase your Panchayat's work"></textarea></div>
+    <div class="fg"><label>Hashtag</label><input type="text" id="inp-hashtag" placeholder="#CleanGreenPanchayat"></div>
+    <div class="fg"><label>Step 1 Action</label><textarea id="inp-step1" rows="2" placeholder="e.g. Create a 1–1.5 minute video highlighting your unique work or idea on how your Panchayat is becoming a Clean and Green Panchayat."></textarea><span class="hint">Steps 2 & 3 are auto-generated from hashtag.</span></div>
+    <div class="row2">
+      <div class="fg"><label>Last Date</label><input type="date" id="inp-lastdate"></div>
+      <div class="fg"><label>Winner Reveal</label><input type="date" id="inp-winnerdate"></div>
+    </div>
+
+    <hr class="div">
+    <div class="stitle">Prize Money</div>
+    <div class="row2">
+      <div class="fg"><label>🥇 1st Place</label><input type="text" id="inp-p1" placeholder="₹25,000"></div>
+      <div class="fg"><label>🥈 2nd Place</label><input type="text" id="inp-p2" placeholder="₹20,000"></div>
+    </div>
+    <div class="fg" style="max-width:50%"><label>🥉 3rd Place</label><input type="text" id="inp-p3" placeholder="₹15,000"></div>
+
+    <hr class="div">
+    <div class="stitle">Languages</div>
+    <div class="chips" id="chips"></div>
+    <p style="font-size:10px;color:var(--muted);margin-top:7px">Click to toggle. All 12 on by default.</p>
+    <div class="fg" style="margin-top:10px"><label>Generate T&C image too?</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400">
+        <input type="checkbox" id="chk-tnc" checked style="accent-color:var(--accent)"> Yes — generate Terms & Conditions poster
+      </label>
+    </div>
+  </div>
+
+  <!-- TAB: Assets -->
+  <div class="tab-panel" id="tab-assets">
+    <div class="stitle">Header Logos</div>
+    <div class="fg"><label>Top Logo (QCI + Sarpanch Samvaad combined)</label>
+      <div class="asset-upload" onclick="triggerUpload('logo-top')">
+        <div class="asset-thumb" id="thumb-logo-top"><span>🏛</span></div>
+        <div class="asset-info"><div class="aname">Header Logo</div><div class="astatus" id="status-logo-top">Click to upload PNG/SVG</div></div>
+        <button class="asset-clear" id="clear-logo-top" onclick="clearAsset(event,'logo-top')">✕</button>
+      </div>
+    </div>
+    <div class="fg"><label>QCI Logo (left side of header)</label>
+      <div class="asset-upload" onclick="triggerUpload('logo-qci')">
+        <div class="asset-thumb" id="thumb-logo-qci"><span>Q</span></div>
+        <div class="asset-info"><div class="aname">QCI Logo</div><div class="astatus" id="status-logo-qci">Click to upload PNG/SVG</div></div>
+        <button class="asset-clear" id="clear-logo-qci" onclick="clearAsset(event,'logo-qci')">✕</button>
+      </div>
+    </div>
+    <div class="fg"><label>Sarpanch Samvaad Logo (right side of header)</label>
+      <div class="asset-upload" onclick="triggerUpload('logo-ss')">
+        <div class="asset-thumb" id="thumb-logo-ss"><span>🌾</span></div>
+        <div class="asset-info"><div class="aname">SS Logo</div><div class="astatus" id="status-logo-ss">Click to upload PNG/SVG</div></div>
+        <button class="asset-clear" id="clear-logo-ss" onclick="clearAsset(event,'logo-ss')">✕</button>
+      </div>
+    </div>
+
+    <hr class="div">
+    <div class="stitle">Competition Poster Illustrations</div>
+    <div class="fg"><label>Trophy Podium Illustration</label>
+      <div class="asset-upload" onclick="triggerUpload('trophy')">
+        <div class="asset-thumb" id="thumb-trophy"><span>🏆</span></div>
+        <div class="asset-info"><div class="aname">Trophy Image</div><div class="astatus" id="status-trophy">Click to upload (overrides default)</div></div>
+        <button class="asset-clear" id="clear-trophy" onclick="clearAsset(event,'trophy')">✕</button>
+      </div>
+    </div>
+    <div class="fg"><label>Bottom Illustration (hands / theme art)</label>
+      <div class="asset-upload" onclick="triggerUpload('bottom-art')">
+        <div class="asset-thumb" id="thumb-bottom-art"><span>🙌</span></div>
+        <div class="asset-info"><div class="aname">Bottom Art</div><div class="astatus" id="status-bottom-art">Click to upload (recommended 680×300px)</div></div>
+        <button class="asset-clear" id="clear-bottom-art" onclick="clearAsset(event,'bottom-art')">✕</button>
+      </div>
+    </div>
+    <p style="font-size:10px;color:var(--muted);margin-top:4px">Assets are stored in your browser session only.</p>
+  </div>
+
+  <!-- TAB: Colors -->
+  <div class="tab-panel" id="tab-colors">
+    <div class="stitle">Poster Color Scheme</div>
+    <div class="fg"><label>Background Color</label>
+      <div class="color-wrap"><input type="color" id="c-bg" value="#ebf5e4"><input type="text" id="c-bg-hex" value="#ebf5e4"></div>
+    </div>
+    <div class="fg"><label>Primary Dark (header, title, footer)</label>
+      <div class="color-wrap"><input type="color" id="c-primary" value="#1e5631"><input type="text" id="c-primary-hex" value="#1e5631"></div>
+    </div>
+    <div class="fg"><label>Theme Banner</label>
+      <div class="color-wrap"><input type="color" id="c-banner" value="#27633a"><input type="text" id="c-banner-hex" value="#27633a"></div>
+    </div>
+    <div class="fg"><label>Accent / Winner Box</label>
+      <div class="color-wrap"><input type="color" id="c-accent" value="#f5a623"><input type="text" id="c-accent-hex" value="#f5a623"></div>
+    </div>
+    <div class="fg"><label>Podium / Teal Accent</label>
+      <div class="color-wrap"><input type="color" id="c-teal" value="#4fc3f7"><input type="text" id="c-teal-hex" value="#4fc3f7"></div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="resetColors()">↺ Reset to Default Green</button>
+  </div>
+
+</aside>
+
+<!-- Actions (always visible) -->
+<div style="display:none" id="actions-inject"></div>
+
+<main class="preview">
+  <div class="prev-header">
+    <h2>Preview</h2>
+    <span class="prev-count" id="prev-count">0 images</span>
+  </div>
+  <div class="grid" id="grid">
+    <div class="empty"><div class="ei">🖼</div><p>Fill in the competition details and click <strong>Generate Images</strong>.</p></div>
+  </div>
+</main>
+</div>
+
+<!-- Action bar rendered inside panel -->
+<script>
+// Inject actions at bottom of panel
+const panel = document.querySelector('.panel');
+const actDiv = document.createElement('div');
+actDiv.className = 'actions';
+actDiv.innerHTML = `
+  <button class="btn btn-primary" id="btn-gen" onclick="startGeneration()">⚡ Generate Images</button>
+  <button class="btn btn-translate" id="btn-translate" onclick="startTranslation()" style="display:none">🌐 Translate into Other Languages</button>
+  <button class="btn btn-success" id="btn-dl" onclick="downloadAll()" disabled>⬇ Download All as ZIP</button>
+  <div class="status" id="statusbar">Ready — fill the form above and click Generate.</div>
+  <div class="pbar-wrap" id="pwrap"><div class="pbar" id="pbar"></div></div>
+`;
+panel.appendChild(actDiv);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+<script>
+// ─── Language config ──────────────────────────────────────────────────────────
+const LANGS = [
+  {code:'eng', name:'English',   font:'Noto Sans'},
+  {code:'hi',  name:'Hindi',     font:'Noto Sans Devanagari'},
+  {code:'gj',  name:'Gujarati',  font:'Noto Sans Gujarati'},
+  {code:'mh',  name:'Marathi',   font:'Noto Sans Devanagari'},
+  {code:'pb',  name:'Punjabi',   font:'Noto Sans Gurmukhi'},
+  {code:'te',  name:'Telugu',    font:'Noto Sans Telugu'},
+  {code:'ka',  name:'Kannada',   font:'Noto Sans Kannada'},
+  {code:'as',  name:'Assamese',  font:'Noto Sans Bengali'},
+  {code:'ta',  name:'Tamil',     font:'Noto Sans Tamil'},
+  {code:'odia',name:'Odia',      font:'Noto Sans Oriya'},
+  {code:'ben', name:'Bengali',   font:'Noto Sans Bengali'},
+  {code:'mal', name:'Malayalam', font:'Noto Sans Malayalam'},
+];
+
+const activeLangs = new Set(LANGS.map(l => l.code));
+let generatedCanvases = {};
+
+const TROPHY_IMG = new Image();
+TROPHY_IMG.src = 'data:image/png;base64,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';
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const ids = ['details','assets','colors'];
+    t.classList.toggle('active', ids[i] === id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => {
+    p.classList.toggle('active', p.id === 'tab-'+id);
+  });
+}
+
+// ─── Lang chips ───────────────────────────────────────────────────────────────
+(function buildChips() {
+  const c = document.getElementById('chips');
+  LANGS.forEach(l => {
+    const ch = document.createElement('div');
+    ch.className = 'chip on';
+    ch.textContent = l.name;
+    ch.dataset.code = l.code;
+    ch.onclick = () => {
+      if (activeLangs.has(l.code)) { activeLangs.delete(l.code); ch.classList.remove('on'); }
+      else { activeLangs.add(l.code); ch.classList.add('on'); }
+    };
+    c.appendChild(ch);
+  });
+})();
+
+// ─── Color sync ───────────────────────────────────────────────────────────────
+['bg','primary','banner','accent','teal'].forEach(k => {
+  const pk = document.getElementById('c-'+k);
+  const hk = document.getElementById('c-'+k+'-hex');
+  pk.addEventListener('input', () => { hk.value = pk.value; });
+  hk.addEventListener('input', () => { if (/^#[0-9a-fA-F]{6}$/.test(hk.value)) pk.value = hk.value; });
+});
+function getColors() {
+  return {
+    bg: document.getElementById('c-bg-hex').value,
+    primary: document.getElementById('c-primary-hex').value,
+    banner: document.getElementById('c-banner-hex').value,
+    accent: document.getElementById('c-accent-hex').value,
+    teal: document.getElementById('c-teal-hex').value,
+  };
+}
+function resetColors() {
+  const def = {bg:'#ebf5e4',primary:'#1e5631',banner:'#27633a',accent:'#f5a623',teal:'#4fc3f7'};
+  Object.entries(def).forEach(([k,v]) => {
+    document.getElementById('c-'+k).value = v;
+    document.getElementById('c-'+k+'-hex').value = v;
+  });
+}
+
+// ─── Asset management ─────────────────────────────────────────────────────────
+const assets = {};
+const ASSET_KEYS = ['logo-top','logo-qci','logo-ss','trophy','bottom-art'];
+
+function triggerUpload(key) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        assets[key] = img;
+        const thumb = document.getElementById('thumb-'+key);
+        thumb.innerHTML = `<img src="${ev.target.result}">`;
+        document.getElementById('status-'+key).textContent = file.name;
+        document.getElementById('clear-'+key).classList.add('visible');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+function clearAsset(e, key) {
+  e.stopPropagation();
+  delete assets[key];
+  const thumb = document.getElementById('thumb-'+key);
+  const fallbacks = {'logo-top':'🏛','logo-qci':'Q','logo-ss':'🌾','trophy':'🏆','bottom-art':'🙌','app-phone':'📱','leaf':'🍃'};
+  thumb.innerHTML = `<span>${fallbacks[key]||'📎'}</span>`;
+  document.getElementById('status-'+key).textContent = 'Click to upload';
+  document.getElementById('clear-'+key).classList.remove('visible');
+}
+
+// ─── Status & progress ────────────────────────────────────────────────────────
+function setStatus(msg, type='') {
+  const b = document.getElementById('statusbar');
+  b.className = 'status ' + type;
+  b.innerHTML = type === 'run' ? `<div class="spin"></div>${msg}` : msg;
+}
+function setProgress(pct) {
+  const w = document.getElementById('pwrap');
+  w.style.display = 'block';
+  document.getElementById('pbar').style.width = pct + '%';
+  if (pct >= 100) setTimeout(() => { w.style.display = 'none'; }, 800);
+}
+
+// ─── Date helpers ─────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-IN', {day:'numeric', month:'long', year:'numeric'});
+}
+function winnerBoxDate(iso) {
+  if (!iso) return {month:'', day:''};
+  const d = new Date(iso + 'T00:00:00');
+  return {
+    month: d.toLocaleString('en-IN', {month:'long'}).toUpperCase(),
+    day: d.getDate().toString()
+  };
+}
+
+// ─── Canvas helpers ───────────────────────────────────────────────────────────
+const S = 1080;
+function rr(ctx, x, y, w, h, r) {
+  if (typeof r === 'number') r = [r,r,r,r];
+  const [tl,tr,br,bl] = r;
+  ctx.beginPath();
+  ctx.moveTo(x+tl,y);ctx.lineTo(x+w-tr,y);ctx.quadraticCurveTo(x+w,y,x+w,y+tr);
+  ctx.lineTo(x+w,y+h-br);ctx.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+  ctx.lineTo(x+bl,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-bl);
+  ctx.lineTo(x,y+tl);ctx.quadraticCurveTo(x,y,x+tl,y);
+  ctx.closePath();
+}
+
+function wrapLines(ctx, text, maxW) {
+  const words = String(text).split(' ');
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const t = line ? line+' '+w : w;
+    if (ctx.measureText(t).width > maxW && line) { lines.push(line); line = w; }
+    else line = t;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function drawWrapped(ctx, text, x, y, maxW, lh, align='left') {
+  const lines = wrapLines(ctx, text, maxW);
+  const savedAlign = ctx.textAlign;
+  ctx.textAlign = align;
+  lines.forEach((l,i) => ctx.fillText(l, x, y + i*lh));
+  ctx.textAlign = savedAlign;
+  return lines.length;
+}
+
+function fitFont(ctx, text, maxW, baseSize, fontStr) {
+  let size = baseSize;
+  while (size > 24) {
+    ctx.font = fontStr.replace('SIZE', size);
+    if (ctx.measureText(text).width <= maxW) break;
+    size -= 2;
+  }
+  return size;
+}
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+function lightenHex(hex, amt) {
+  const {r,g,b} = hexToRgb(hex);
+  return `rgb(${Math.min(255,r+amt)},${Math.min(255,g+amt)},${Math.min(255,b+amt)})`;
+}
+
+// Draw leaf decoration (top-right corner, like in the reference)
+function drawLeafDecor(ctx, C) {
+  if (assets.leaf) {
+    ctx.globalAlpha = 0.85;
+    ctx.drawImage(assets.leaf, S - 200, 0, 200, 200);
+    ctx.globalAlpha = 1;
+    return;
+  }
+  // Fallback: draw simple decorative leaf shapes
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = C.primary;
+  // Large leaf
+  ctx.beginPath();
+  ctx.moveTo(S, 0);
+  ctx.bezierCurveTo(S-60, 60, S-140, 20, S-120, 110);
+  ctx.bezierCurveTo(S-100, 180, S-30, 140, S, 0);
+  ctx.fill();
+  // Small leaf
+  ctx.beginPath();
+  ctx.moveTo(S-30, 0);
+  ctx.bezierCurveTo(S-80, 30, S-130, 40, S-100, 90);
+  ctx.bezierCurveTo(S-80, 130, S-20, 80, S-30, 0);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// Draw logo header area
+function drawHeader(ctx, C) {
+  ctx.fillStyle = C.primary;
+  ctx.fillRect(0, 0, S, 39);
+
+  if (assets['logo-top']) {
+    ctx.save();
+    rr(ctx, S/2 - 130, 0, 260, 75, [0, 0, 60, 60]);
+    ctx.clip();
+    ctx.drawImage(assets['logo-top'], S/2 - 130, 0, 260, 75);
+    ctx.restore();
+  } else if (assets['logo-qci'] && assets['logo-ss']) {
+    ctx.drawImage(assets['logo-qci'], S/2 - 210, 10, 180, 70);
+    ctx.drawImage(assets['logo-ss'], S/2 + 30,  10, 180, 70);
+  } else if (assets['logo-qci']) {
+    ctx.drawImage(assets['logo-qci'], S/2 - 100, 10, 200, 70);
+  } else if (assets['logo-ss']) {
+    ctx.drawImage(assets['logo-ss'], S/2 - 100, 10, 200, 70);
+  } else {
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    rr(ctx, S/2-200, 18, 170, 54, 6); ctx.fill();
+    rr(ctx, S/2+30,  18, 170, 54, 6); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = "700 13px 'Noto Sans'";
+    ctx.textAlign = 'center';
+    ctx.fillText('QCI', S/2 - 115, 40);
+    ctx.fillText('Quality Council of India', S/2 - 115, 58);
+    ctx.fillText('SARPANCH', S/2 + 115, 40);
+    ctx.fillText('SAMVAAD', S/2 + 115, 58);
+  }
+}
+
+// Draw dark footer bar
+function drawFooter(ctx, C, deadlineText) {
+  ctx.fillStyle = C.primary;
+  ctx.fillRect(0, S - 45, S, 45);
+  ctx.fillStyle = '#fff';
+  ctx.font = "italic 700 20px 'Noto Sans'";
+  ctx.textAlign = 'center';
+  ctx.fillText('Submission deadline: ' + deadlineText, S/2, S - 45 + 29);
+}
+
+// ─── COMPETITION POSTER renderer ──────────────────────────────────────────────
+function renderCompetition(canvas, data, langFont, C) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = S; canvas.height = S;
+
+  const F = (size, weight, extra) =>
+    `${weight||700} ${size}px '${extra||'Barlow Condensed'}','${langFont}','Noto Sans',sans-serif`;
+  const FN = (size, weight) =>
+    `${weight||700} ${size}px '${langFont}','Noto Sans',sans-serif`;
+
+  // BG
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, S, S);
+
+  drawLeafDecor(ctx, C);
+  drawHeader(ctx, C);
+
+  // ── "MONTHLY COMPETITION" heading ──
+  const headY = 110;
+  ctx.fillStyle = C.primary;
+  // Fit text width
+  let headSize = 92;
+  const headStr = data.poster_heading || 'MONTHLY COMPETITION';
+  ctx.font = F(headSize, 900);
+  while (ctx.measureText(headStr).width > S - 60 && headSize > 40) {
+    headSize -= 3;
+    ctx.font = F(headSize, 900);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillText(headStr, S/2, headY + headSize * 0.85);
+
+  // ── Theme banner ──
+  const bannerY = headY + headSize + 12;
+  const bannerH = 58;
+  ctx.fillStyle = C.banner;
+  ctx.fillRect(0, bannerY, S, bannerH);
+  ctx.fillStyle = '#fff';
+  const themeStr = data.theme_banner || '';
+  let themeSize = 32;
+  ctx.font = F(themeSize, 700);
+  while (ctx.measureText(themeStr).width > S - 80 && themeSize > 18) {
+    themeSize -= 2; ctx.font = F(themeSize, 700);
+  }
+  ctx.textAlign = 'center';
+  ctx.fillText(themeStr, S/2, bannerY + bannerH/2 + themeSize * 0.37);
+
+  // ── Trophy / Illustration area ──
+  const trophyY = bannerY + bannerH + 10;
+  const trophyH = 255;
+  {
+    const src = assets.trophy || TROPHY_IMG;
+    const iw = src.naturalWidth || src.width;
+    const ih = src.naturalHeight || src.height;
+    if (iw && ih) {
+      const scale = Math.min((S - 80) / iw, trophyH / ih);
+      const dw = iw * scale, dh = ih * scale;
+      ctx.drawImage(src, S/2 - dw/2, trophyY + (trophyH - dh) / 2, dw, dh);
+    } else {
+      drawTrophyFallback(ctx, C, data, trophyY, trophyH);
+    }
+  }
+
+  // ── "HOW CAN SARPANCHS PARTICIPATE:" ──
+  const secY = trophyY + trophyH + 8;
+  const secH = 52;
+  ctx.fillStyle = 'rgba(0,0,0,0.04)';
+  ctx.fillRect(40, secY, S - 80, secH);
+  ctx.fillStyle = C.primary;
+  ctx.font = FN(26, 700) + ' italic';
+  ctx.font = `italic 700 26px '${langFont}','Noto Sans',sans-serif`;
+  ctx.textAlign = 'left';
+  const secText = data.section_heading || 'HOW CAN SARPANCHS PARTICIPATE :';
+  ctx.fillText(secText, 60, secY + 33);
+  // Decorative line under
+  ctx.strokeStyle = C.primary;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(60, secY + secH - 8);
+  ctx.lineTo(S - 60, secY + secH - 8);
+  ctx.stroke();
+
+  // ── Steps ──
+  const stepsY = secY + secH + 14;
+  const stepsMaxH = 215;
+  const step1Text = data.step1 || '';
+  const step2Text = data.step2 || '';
+  const step3Text = data.step3 || '';
+
+  ctx.textAlign = 'left';
+  let sy = stepsY;
+  const stepLh = 28;
+  const stepFont = `400 22px '${langFont}','Noto Sans',sans-serif`;
+  const boldFont = `700 22px '${langFont}','Noto Sans',sans-serif`;
+
+  function drawStep(label, text, y) {
+    ctx.font = boldFont;
+    ctx.fillStyle = C.primary;
+    ctx.fillText(label + ' ', 55, y);
+    const lw = ctx.measureText(label + ' ').width;
+    ctx.font = stepFont;
+    ctx.fillStyle = '#222';
+    const lines = wrapLines(ctx, text, S - 120 - lw);
+    lines.forEach((line, i) => {
+      if (i === 0) ctx.fillText(line, 55 + lw, y);
+      else ctx.fillText(line, 55, y + i * stepLh);
+    });
+    return Math.max(1, lines.length) * stepLh + 10;
+  }
+
+  sy += drawStep('Step 1:', step1Text, sy);
+  sy += drawStep('Step 2:', step2Text, sy);
+  sy += drawStep('Step 3:', step3Text, sy);
+
+  // ── Bottom section: illustration + winner reveal box ──
+  const bottomH = 200;
+  const bottomY = S - 45 - bottomH;
+
+  if (assets['bottom-art']) {
+    const iw = assets['bottom-art'].width, ih = assets['bottom-art'].height;
+    const wbX = S - 200 - 40; // winner box left edge
+    const availW = wbX - 40 - 10;
+    const scale = Math.min(availW / iw, bottomH / ih);
+    const dw = iw * scale, dh = ih * scale;
+    ctx.drawImage(assets['bottom-art'], 40, bottomY + (bottomH - dh) / 2, dw, dh);
+  }
+
+  if (assets['app-phone']) {
+    // Render phone to left of winner box
+    const phX = S - 290, phY = bottomY + 8, phH = bottomH - 16;
+    const iw = assets['app-phone'].width, ih = assets['app-phone'].height;
+    const scale = phH / ih;
+    ctx.drawImage(assets['app-phone'], phX, phY, iw * scale, phH);
+  }
+
+  // Winner Reveal Box
+  const wbW = 200, wbH = bottomH - 10;
+  const wbX = S - wbW - 40, wbY = bottomY + 5;
+  const wb = winnerBoxDate(document.getElementById('inp-winnerdate').value);
+  drawWinnerBox(ctx, C, wbX, wbY, wbW, wbH, data.winner_label || 'WINNER\nREVEAL :', wb.month, wb.day);
+
+  drawFooter(ctx, C, data.footer_deadline || fmtDate(document.getElementById('inp-lastdate').value));
+}
+
+function drawTrophyFallback(ctx, C, data, tY, tH) {
+  // Draw a simple trophy podium as fallback
+  const p1 = data.prize1 || '₹25,000';
+  const p2 = data.prize2 || '₹20,000';
+  const p3 = data.prize3 || '₹15,000';
+
+  ctx.textAlign = 'center';
+  // Podium stands
+  const podW = 200, gap = 20;
+  const p1x = S/2, p2x = S/2 - podW - gap, p3x = S/2 + podW + gap;
+
+  function drawPod(x, h, color, label, prize, rank) {
+    const podY = tY + tH - h;
+    ctx.fillStyle = color;
+    rr(ctx, x - podW/2 + 10, podY, podW - 20, h, [8,8,0,0]);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `900 28px 'Noto Sans'`;
+    ctx.fillText(rank, x, podY + 38);
+    ctx.font = `700 22px 'Noto Sans'`;
+    ctx.fillText(prize, x, podY + h - 18);
+    // Trophy emoji above
+    ctx.font = '52px serif';
+    ctx.fillText(label, x, podY - 10);
+  }
+
+  drawPod(p2x, 100, '#b0bec5', '🥈', p2, '2');
+  drawPod(p1x, 140, C.teal, '🥇', p1, '1');
+  drawPod(p3x, 80, '#cd7f32', '🥉', p3, '3');
+}
+
+function drawWinnerBox(ctx, C, x, y, w, h, label, month, day) {
+  // Outer box - dark green
+  ctx.fillStyle = C.primary;
+  rr(ctx, x, y, w, h, 12);
+  ctx.fill();
+
+  // Top strip (slightly lighter)
+  ctx.fillStyle = C.banner;
+  rr(ctx, x, y, w, h * 0.46, [12,12,0,0]);
+  ctx.fill();
+
+  // "WINNER REVEAL :" label
+  ctx.fillStyle = '#fff';
+  ctx.textAlign = 'center';
+  ctx.font = `900 18px 'Barlow Condensed','Noto Sans',sans-serif`;
+  if (label.includes('\n')) {
+    const parts = label.split('\n');
+    ctx.fillText(parts[0], x + w/2, y + 20);
+    ctx.fillText(parts[1], x + w/2, y + 42);
+  } else {
+    ctx.fillText(label, x + w/2, y + 30);
+  }
+
+  // Calendar icon area (white background)
+  const calX = x + 10, calY = y + h * 0.48, calW = w - 20, calH = h * 0.50;
+  ctx.fillStyle = '#fff';
+  rr(ctx, calX, calY, calW, calH, 8);
+  ctx.fill();
+
+  // Month text
+  ctx.fillStyle = C.primary;
+  ctx.font = `800 16px 'Barlow Condensed','Noto Sans',sans-serif`;
+  ctx.fillText(month || 'JULY', x + w/2, calY + 20);
+
+  // Day number
+  ctx.fillStyle = '#222';
+  ctx.font = `900 36px 'Barlow Condensed','Noto Sans',sans-serif`;
+  ctx.fillText(day || '7', x + w/2, calY + calH - 8);
+}
+
+// ─── T&C POSTER renderer ──────────────────────────────────────────────────────
+function renderTnC(canvas, data, C) {
+  const ctx = canvas.getContext('2d');
+  canvas.width = S; canvas.height = S;
+
+  // BG
+  ctx.fillStyle = C.bg;
+  ctx.fillRect(0, 0, S, S);
+
+  drawLeafDecor(ctx, C);
+  drawHeader(ctx, C);
+
+  // "TERMS AND CONDITIONS" heading
+  ctx.fillStyle = C.primary;
+  ctx.font = `900 76px 'Barlow Condensed','Noto Sans',sans-serif`;
+  ctx.textAlign = 'center';
+  let headSize = 76;
+  const headStr = data.tnc_heading || 'TERMS AND CONDITIONS';
+  while (ctx.measureText(headStr).width > S - 60 && headSize > 36) {
+    headSize -= 3;
+    ctx.font = `900 ${headSize}px 'Barlow Condensed','Noto Sans',sans-serif`;
+  }
+  ctx.fillText(headStr, S/2, 170);
+
+  // Rules
+  const rules = data.tnc_rules || getTnCRulesDefault(data);
+  const iconEmojis = ['🚩','🎬','📱','#️⃣','📋','👥','🤝'];
+  const ruleX = 45, textX = 135, textMaxW = S - textX - 40;
+  let ry = 200;
+  const ruleLh = 24;
+  const ruleFont = `400 19px '${data._langFont || 'Noto Sans'}','Noto Sans',sans-serif`;
+  const boldRuleFont = `700 19px '${data._langFont || 'Noto Sans'}','Noto Sans',sans-serif`;
+
+  rules.forEach((rule, i) => {
+    if (ry > S - 130) return; // clip if too long
+    // Icon circle
+    ctx.fillStyle = C.primary;
+    ctx.beginPath();
+    ctx.arc(ruleX + 32, ry + 26, 32, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = `28px serif`;
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(iconEmojis[i] || '•', ruleX + 32, ry + 34);
+
+    // Rule text
+    ctx.textAlign = 'left';
+    ctx.font = ruleFont;
+    ctx.fillStyle = '#1a2e1a';
+    const lines = wrapLines(ctx, rule, textMaxW);
+    lines.forEach((line, li) => {
+      ctx.fillText(line, textX, ry + 20 + li * ruleLh);
+    });
+    ry += Math.max(lines.length * ruleLh + 16, 70);
+  });
+
+  drawFooter(ctx, C, data.footer_deadline || '');
+}
+
+function getTnCRulesDefault(data) {
+  const hashtag = data.hashtag || '#YourHashtag';
+  const lastDate = data.lastDateFormatted || '';
+  return [
+    `The content of the videos must be original and created by the participant. The challenge is open to only for the Sarpanchs onboarded on the Sarpanch Samvaad Mobile App. Proxy participations will lead to disqualification.`,
+    `Videos must be 1–1.5 minutes in length. Submissions should focus on ideas or plans to enhance ${data.competition_theme || 'village development and self-reliance'}.`,
+    `Only entries submitted through the Sarpanch Samvaad App will be considered for evaluation and prizes. Entries submitted after the Submission Window (${lastDate}) will not be considered.`,
+    `Use hashtag ${hashtag} select the category Monthly Competitions while uploading your entry. Entries without the Hashtag or Category will not be considered for evaluation.`,
+    `Entries will be judged on Innovation (40%), Practicality (40%), and Presentation (20%). Higher scores go to original, feasible ideas with clear and creative video storytelling. Entries will be judged by an expert committee, and the decision is final and binding.`,
+    `By entering, participants give Sarpanch Samvaad (QCI) the rights to edit and use their videos on the app, social media platforms, and other media with due credit and acknowledgement.`,
+    `Submission of specified details by the Sarpanchs is mandatory to claim the cash prizes.`,
+  ];
+}
+
+// ─── Claude translation (calls local server) ─────────────────────────────────
+async function translateAll(base, langsToTranslate) {
+  const selected = langsToTranslate;
+  const langList = selected.map(l => `${l.code} (${l.name})`).join(', ');
+  const tncRules = getTnCRulesDefault(base);
+
+  const prompt = `You are a translator for Sarpanch Samvaad, a civic app for rural Sarpanchs (elected village heads) in India.
+
+Translate the following into these languages: ${langList}
+
+Keep ₹, #, and number values exactly as-is.
+Keep dates in their local language format (month name translated, numerals kept).
+Return ONLY a valid JSON object, no markdown, no explanation.
+
+Source data:
+${JSON.stringify({
+  poster_heading: 'MONTHLY COMPETITION',
+  theme_banner: base.theme_banner,
+  competition_theme: base.competition_theme,
+  section_heading: 'HOW CAN SARPANCHS PARTICIPATE :',
+  step1: base.step1,
+  step2: base.step2,
+  step3: base.step3,
+  footer_deadline: base.footer_deadline,
+  winner_label: 'WINNER\nREVEAL :',
+  tnc_heading: 'TERMS AND CONDITIONS',
+  tnc_rules: tncRules,
+  prize1: base.prize1, prize2: base.prize2, prize3: base.prize3,
+}, null, 2)}
+
+Return format — fill all ${selected.length} codes:
+{
+  ${selected.map(l => `"${l.code}": { "poster_heading":"...","theme_banner":"...","competition_theme":"...","section_heading":"...","step1":"...","step2":"...","step3":"...","footer_deadline":"...","winner_label":"...","tnc_heading":"...","tnc_rules":["...","...","...","...","...","...","..."],"prize1":"...","prize2":"...","prize3":"..." }`).join(',\n  ')}
+}`;
+
+  const resp = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err?.error || `Server error ${resp.status}`);
+  }
+  const { translations } = await resp.json();
+  return translations;
+}
+
+// ─── Font loading ─────────────────────────────────────────────────────────────
+async function loadFonts() {
+  const families = [...new Set(LANGS.map(l => l.font)), 'Barlow Condensed', 'Oswald'];
+  const imgReady = TROPHY_IMG.complete
+    ? Promise.resolve()
+    : new Promise(r => { TROPHY_IMG.onload = r; TROPHY_IMG.onerror = r; });
+  await Promise.all([
+    ...families.map(f => document.fonts.load(`700 40px '${f}'`).catch(() => null)),
+    imgReady,
+  ]);
+  await document.fonts.ready;
+}
+
+// ─── Translation cache ────────────────────────────────────────────────────────
+let translationCache = { key: null, translations: {} };
+
+function translationCacheKey(baseData, langCodes) {
+  return JSON.stringify({
+    theme_banner: baseData.theme_banner,
+    step1: baseData.step1,
+    step2: baseData.step2,
+    step3: baseData.step3,
+    footer_deadline: baseData.footer_deadline,
+    prize1: baseData.prize1,
+    prize2: baseData.prize2,
+    prize3: baseData.prize3,
+    hashtag: baseData.hashtag,
+    langs: langCodes.sort(),
+  });
+}
+
+// ─── Pending translation state ────────────────────────────────────────────────
+let pendingTranslation = null;
+
+// ─── Main generation (English only) ──────────────────────────────────────────
+async function startGeneration() {
+  const month = document.getElementById('inp-month').value.trim();
+  const theme = document.getElementById('inp-theme').value.trim();
+  const hashtag = document.getElementById('inp-hashtag').value.trim();
+  const step1Input = document.getElementById('inp-step1').value.trim();
+  const lastDateIso = document.getElementById('inp-lastdate').value;
+  const p1 = document.getElementById('inp-p1').value.trim() || '₹25,000';
+  const p2 = document.getElementById('inp-p2').value.trim() || '₹20,000';
+  const p3 = document.getElementById('inp-p3').value.trim() || '₹15,000';
+  const genTnC = document.getElementById('chk-tnc').checked;
+  const C = getColors();
+
+  if (!month || !theme || !hashtag) {
+    setStatus('Please fill Month, Theme, and Hashtag.', 'err'); return;
+  }
+
+  const selectedLangs = LANGS.filter(l => activeLangs.has(l.code));
+  if (selectedLangs.length === 0) { setStatus('Select at least one language.', 'err'); return; }
+
+  document.getElementById('btn-gen').disabled = true;
+  document.getElementById('btn-translate').style.display = 'none';
+  document.getElementById('btn-dl').disabled = true;
+  generatedCanvases = {};
+  document.getElementById('grid').innerHTML = '';
+  setProgress(0);
+
+  const lastDateFmt = fmtDate(lastDateIso);
+  const baseData = {
+    theme_banner: `${month.toUpperCase()} THEME: ${theme.toUpperCase()}`,
+    competition_theme: theme,
+    step1: step1Input || `Create a 1–1.5 minute video highlighting your unique work or idea on how your Panchayat is working towards ${theme}.`,
+    step2: `Choose the category 'Monthly Competitions' on the Sarpanch Samvaad app and use the hashtag ${hashtag}.`,
+    step3: `Upload it on the Sarpanch Samvaad app.`,
+    footer_deadline: lastDateFmt,
+    prize1: p1, prize2: p2, prize3: p3,
+    hashtag,
+    lastDateFormatted: lastDateFmt,
+  };
+
+  const engData = {
+    ...baseData,
+    poster_heading: 'MONTHLY COMPETITION',
+    section_heading: 'HOW CAN SARPANCHS PARTICIPATE :',
+    winner_label: 'WINNER\nREVEAL :',
+    tnc_heading: 'TERMS AND CONDITIONS',
+    tnc_rules: getTnCRulesDefault(baseData),
+  };
+
+  try {
+    setStatus('Loading fonts…', 'run'); setProgress(5);
+    await loadFonts();
+    setProgress(15);
+
+    const grid = document.getElementById('grid');
+    const engLang = selectedLangs.find(l => l.code === 'eng');
+    const otherLangs = selectedLangs.filter(l => l.code !== 'eng');
+
+    // Render English poster(s) immediately
+    if (engLang) {
+      setStatus('Rendering English poster…', 'run');
+      const d = { ...engData, _langFont: engLang.font };
+      const cv = document.createElement('canvas');
+      cv.width = S; cv.height = S;
+      renderCompetition(cv, d, engLang.font, C);
+      addCard(grid, cv, 'ENG', engLang.name, 'Competition', month);
+      generatedCanvases['comp_eng'] = { canvas: cv, label: 'English (Competition)', month };
+
+      if (genTnC) {
+        const cv2 = document.createElement('canvas');
+        cv2.width = S; cv2.height = S;
+        renderTnC(cv2, d, C);
+        addCard(grid, cv2, 'ENG', engLang.name, 'T&C', month);
+        generatedCanvases['tnc_eng'] = { canvas: cv2, label: 'English (T&C)', month };
+      }
+      await new Promise(r => setTimeout(r, 10));
+    }
+
+    document.getElementById('prev-count').textContent = Object.keys(generatedCanvases).length + ' images';
+    setProgress(100);
+
+    if (otherLangs.length > 0) {
+      // Store state for the translate button
+      pendingTranslation = { baseData, engData, otherLangs, C, month, lastDateFmt, hashtag, genTnC, grid };
+      document.getElementById('btn-translate').style.display = '';
+      setStatus(`English ready. Click "Translate" to generate ${otherLangs.length} more languages.`, 'ok');
+    } else {
+      setStatus('Done! English image ready.', 'ok');
+      document.getElementById('btn-dl').disabled = false;
+    }
+  } catch (err) {
+    setStatus('Error: ' + err.message, 'err');
+    console.error(err);
+  }
+
+  document.getElementById('btn-gen').disabled = false;
+}
+
+// ─── Translate & render other 11 languages ────────────────────────────────────
+async function startTranslation() {
+  if (!pendingTranslation) return;
+  const { baseData, otherLangs, C, month, lastDateFmt, hashtag, genTnC, grid } = pendingTranslation;
+
+  document.getElementById('btn-translate').disabled = true;
+  document.getElementById('btn-gen').disabled = true;
+  setProgress(0);
+
+  let translations = {};
+  const cacheKey = translationCacheKey(baseData, otherLangs.map(l => l.code));
+  if (translationCache.key === cacheKey) {
+    translations = translationCache.translations;
+    setStatus('Using cached translations…', 'run');
+    setProgress(30);
+  } else {
+    try {
+      setStatus(`Translating into ${otherLangs.length} languages via Gemini…`, 'run');
+      translations = await translateAll(baseData, otherLangs);
+      translationCache = { key: cacheKey, translations };
+      setProgress(30);
+    } catch (e) {
+      setStatus(`Translation error: ${e.message} — using English fallback.`, 'err');
+      await new Promise(r => setTimeout(r, 1500));
+      otherLangs.forEach(l => {
+        translations[l.code] = { ...baseData, poster_heading: 'MONTHLY COMPETITION', section_heading: 'HOW CAN SARPANCHS PARTICIPATE :', winner_label: 'WINNER\nREVEAL :', tnc_heading: 'TERMS AND CONDITIONS', tnc_rules: getTnCRulesDefault(baseData) };
+      });
+      setProgress(30);
+    }
+  }
+
+  setStatus(`Rendering ${otherLangs.length} language posters…`, 'run');
+  for (let i = 0; i < otherLangs.length; i++) {
+    const lang = otherLangs[i];
+    const d = { ...(translations[lang.code] || baseData), _langFont: lang.font };
+    d.hashtag = d.hashtag || hashtag;
+    d.lastDateFormatted = d.footer_deadline || lastDateFmt;
+
+    const cv = document.createElement('canvas');
+    cv.width = S; cv.height = S;
+    renderCompetition(cv, d, lang.font, C);
+    addCard(grid, cv, lang.code.toUpperCase(), lang.name, 'Competition', month);
+    generatedCanvases['comp_' + lang.code] = { canvas: cv, label: lang.name + ' (Competition)', month };
+
+    if (genTnC) {
+      const cv2 = document.createElement('canvas');
+      cv2.width = S; cv2.height = S;
+      renderTnC(cv2, d, C);
+      addCard(grid, cv2, lang.code.toUpperCase(), lang.name, 'T&C', month);
+      generatedCanvases['tnc_' + lang.code] = { canvas: cv2, label: lang.name + ' (T&C)', month };
+    }
+
+    document.getElementById('prev-count').textContent = Object.keys(generatedCanvases).length + ' images';
+    setProgress(30 + 70 * (i + 1) / otherLangs.length);
+    await new Promise(r => setTimeout(r, 10));
+  }
+
+  const total = Object.keys(generatedCanvases).length;
+  document.getElementById('prev-count').textContent = total + ' images';
+  document.getElementById('btn-dl').disabled = false;
+  document.getElementById('btn-translate').style.display = 'none';
+  document.getElementById('btn-gen').disabled = false;
+  setProgress(100);
+  setStatus(`Done! ${total} images ready.`, 'ok');
+  pendingTranslation = null;
+}
+
+function addCard(grid, canvas, langCode, langName, type, month) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const top = document.createElement('div');
+  top.className = 'card-top';
+
+  const badge = document.createElement('div');
+  badge.className = 'clang'; badge.textContent = langCode;
+  const typeBadge = document.createElement('div');
+  typeBadge.className = 'ctype'; typeBadge.textContent = type;
+
+  top.appendChild(canvas); top.appendChild(badge); top.appendChild(typeBadge);
+
+  const foot = document.createElement('div');
+  foot.className = 'card-foot';
+  const nm = document.createElement('span');
+  nm.className = 'lname'; nm.textContent = langName + ' — ' + type;
+  const dl = document.createElement('button');
+  dl.className = 'dlbtn'; dl.textContent = 'Download';
+  dl.onclick = () => downloadSingle(canvas, langCode.toLowerCase(), type === 'T&C' ? 'tnc' : 'comp', month);
+  foot.appendChild(nm); foot.appendChild(dl);
+  card.appendChild(top); card.appendChild(foot);
+  grid.appendChild(card);
+}
+
+// ─── Download ─────────────────────────────────────────────────────────────────
+function slug(s) { return s.toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,''); }
+
+function downloadSingle(canvas, code, type, monthStr) {
+  canvas.toBlob(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${type}_${code}_${slug(monthStr)}.png`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }, 'image/png');
+}
+
+async function downloadAll() {
+  const monthStr = document.getElementById('inp-month').value.trim() || 'export';
+  const sl = slug(monthStr);
+  document.getElementById('btn-dl').disabled = true;
+  setStatus('Creating ZIP…', 'run');
+  const zip = new JSZip();
+  const folder = zip.folder('sarpanch_samvaad_' + sl);
+
+  await Promise.all(Object.entries(generatedCanvases).map(([key, {canvas, label, month}]) => {
+    return new Promise(resolve => {
+      canvas.toBlob(blob => {
+        folder.file(`${key}_${sl}.png`, blob);
+        resolve();
+      }, 'image/png');
+    });
+  }));
+
+  const content = await zip.generateAsync({ type: 'blob' });
+  saveAs(content, `sarpanch_samvaad_${sl}.zip`);
+  setStatus('ZIP downloaded!', 'ok');
+  document.getElementById('btn-dl').disabled = false;
+}
+</script>
+</body>
+</html>
